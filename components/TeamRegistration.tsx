@@ -149,7 +149,7 @@ const TeamRegistration: React.FC<TeamRegistrationProps> = ({
       {/* Header */}
       <header className="p-4 bg-slate-800 flex items-center justify-between shadow-md">
         <button
-          onClick={() => navigate(-1)}
+          onClick={() => close()}
           className="text-slate-300 hover:text-white transition text-sm"
         >
           ← Back
