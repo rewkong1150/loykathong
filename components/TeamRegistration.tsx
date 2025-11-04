@@ -37,7 +37,7 @@ const TeamRegistration: React.FC<TeamRegistrationProps> = ({
     if (currentUser && members.length === 0) {
       setMembers([
         {
-          name: currentUser.displayName || 'ผู้ใช้',
+          name: currentUser.displayName || 'User',
           email: currentUser.email || '',
         },
       ]);
@@ -46,15 +46,15 @@ const TeamRegistration: React.FC<TeamRegistrationProps> = ({
 
   const handleAddMember = () => {
     if (!memberName.trim() || !memberEmail.trim()) {
-      alert('กรุณากรอกชื่อและอีเมลของสมาชิก');
+      alert('Please enter member name and email');
       return;
     }
     if (!/^\S+@\S+\.\S+$/.test(memberEmail)) {
-      alert('รูปแบบอีเมลไม่ถูกต้อง');
+      alert('Invalid email format');
       return;
     }
     if (members.some((member) => member.email === memberEmail)) {
-      alert('มีอีเมลนี้ในทีมแล้ว');
+      alert('This email is already in the team');
       return;
     }
     setMembers([...members, { name: memberName, email: memberEmail }]);
@@ -68,7 +68,7 @@ const TeamRegistration: React.FC<TeamRegistrationProps> = ({
       currentUser &&
       members[0].email === currentUser.email
     ) {
-      alert('ไม่สามารถลบตัวเองออกจากทีมได้');
+      alert('You cannot remove yourself from the team');
       return;
     }
     setMembers(members.filter((_, index) => index !== indexToRemove));
@@ -77,7 +77,7 @@ const TeamRegistration: React.FC<TeamRegistrationProps> = ({
   const handleImageUpload = (file: File, type: 'krathong' | 'team') => {
     if (!file) return;
     if (!file.type.startsWith('image/')) {
-      alert('กรุณาเลือกไฟล์รูปภาพเท่านั้น (PNG, JPG, JPEG)');
+      alert('Please upload an image file only (PNG, JPG, JPEG)');
       return;
     }
     const previewUrl = URL.createObjectURL(file);
@@ -94,19 +94,19 @@ const TeamRegistration: React.FC<TeamRegistrationProps> = ({
     e.preventDefault();
 
     if (!currentUser) {
-      alert('กรุณาเข้าสู่ระบบก่อนลงทะเบียนทีม');
+      alert('Please log in before registering a team');
       return;
     }
     if (!teamName.trim()) {
-      alert('กรุณาใส่ชื่อทีม');
+      alert('Please enter a team name');
       return;
     }
     if (members.length < 5) {
-      alert('ทีมต้องมีสมาชิกอย่างน้อย 5 คน');
+      alert('The team must have at least 5 members');
       return;
     }
     if (!krathongImage || !teamImage) {
-      alert('กรุณาอัปโหลดรูปภาพทั้งสองรูป');
+      alert('Please upload both images');
       return;
     }
 
@@ -126,7 +126,7 @@ const TeamRegistration: React.FC<TeamRegistrationProps> = ({
       setUploadingImages(false);
       onRegister(teamName, members, krathongImageUrl, teamImageUrl);
 
-      // Reset
+      // Reset form
       setTeamName('');
       setMembers([]);
       setKrathongImage(null);
@@ -137,7 +137,7 @@ const TeamRegistration: React.FC<TeamRegistrationProps> = ({
       if (teamImageRef.current) teamImageRef.current.value = '';
     } catch (error) {
       console.error('Registration error:', error);
-      alert('เกิดข้อผิดพลาดในการลงทะเบียนทีม');
+      alert('An error occurred while registering the team');
     } finally {
       setIsRegistering(false);
       setUploadingImages(false);
@@ -152,10 +152,10 @@ const TeamRegistration: React.FC<TeamRegistrationProps> = ({
           onClick={() => navigate(-1)}
           className="text-slate-300 hover:text-white transition text-sm"
         >
-          ← ย้อนกลับ
+          ← Back
         </button>
         <h1 className="font-bold text-lg text-center flex-1">
-          ลงทะเบียนทีมกระทง
+          Team Registration
         </h1>
         <div className="w-10"></div>
       </header>
@@ -166,24 +166,24 @@ const TeamRegistration: React.FC<TeamRegistrationProps> = ({
           onSubmit={handleSubmit}
           className="max-w-2xl mx-auto p-6 space-y-6"
         >
-          {/* ชื่อทีม */}
+          {/* Team Name */}
           <div>
             <label className="block font-semibold mb-2 text-slate-200">
-              ชื่อทีม
+              Team Name
             </label>
             <input
               type="text"
               value={teamName}
               onChange={(e) => setTeamName(e.target.value)}
-              placeholder="เช่น ทีมแสงจันทร์ลอยน้ำ"
+              placeholder="e.g., Moonlight Floaters"
               className="w-full rounded-lg bg-slate-800 border border-slate-700 px-4 py-2 focus:ring focus:ring-indigo-500 focus:border-indigo-500 outline-none"
             />
           </div>
 
-          {/* สมาชิกทีม */}
+          {/* Team Members */}
           <div>
             <label className="block font-semibold mb-2 text-slate-200">
-              รายชื่อสมาชิก
+              Team Members
             </label>
 
             <div className="flex flex-col sm:flex-row gap-3">
@@ -191,14 +191,14 @@ const TeamRegistration: React.FC<TeamRegistrationProps> = ({
                 type="text"
                 value={memberName}
                 onChange={(e) => setMemberName(e.target.value)}
-                placeholder="ชื่อ-นามสกุล"
+                placeholder="Full Name"
                 className="flex-1 rounded-lg bg-slate-800 border border-slate-700 px-3 py-2"
               />
               <input
                 type="email"
                 value={memberEmail}
                 onChange={(e) => setMemberEmail(e.target.value)}
-                placeholder="อีเมล"
+                placeholder="Email"
                 className="flex-1 rounded-lg bg-slate-800 border border-slate-700 px-3 py-2"
               />
               <button
@@ -206,7 +206,7 @@ const TeamRegistration: React.FC<TeamRegistrationProps> = ({
                 onClick={handleAddMember}
                 className="bg-indigo-600 hover:bg-indigo-700 rounded-lg px-4 py-2 text-white font-medium"
               >
-                + เพิ่ม
+                + Add
               </button>
             </div>
 
@@ -225,7 +225,7 @@ const TeamRegistration: React.FC<TeamRegistrationProps> = ({
                       onClick={() => handleRemoveMember(i)}
                       className="text-red-400 hover:text-red-300 text-sm"
                     >
-                      ลบ
+                      Remove
                     </button>
                   )}
                 </li>
@@ -233,12 +233,12 @@ const TeamRegistration: React.FC<TeamRegistrationProps> = ({
             </ul>
           </div>
 
-          {/* รูปภาพ */}
+          {/* Images */}
           <div className="grid sm:grid-cols-2 gap-6">
             {/* Krathong Image */}
             <div>
               <label className="block font-semibold mb-2 text-slate-200">
-                รูปภาพกระทง
+                Krathong Image
               </label>
               {krathongImagePreview ? (
                 <div className="relative">
@@ -257,7 +257,7 @@ const TeamRegistration: React.FC<TeamRegistrationProps> = ({
                     }}
                     className="absolute top-2 right-2 bg-red-600 hover:bg-red-700 text-white px-2 py-1 rounded text-xs"
                   >
-                    ลบรูป
+                    Remove
                   </button>
                 </div>
               ) : (
@@ -277,7 +277,7 @@ const TeamRegistration: React.FC<TeamRegistrationProps> = ({
             {/* Team Image */}
             <div>
               <label className="block font-semibold mb-2 text-slate-200">
-                รูปทีม
+                Team Photo
               </label>
               {teamImagePreview ? (
                 <div className="relative">
@@ -296,7 +296,7 @@ const TeamRegistration: React.FC<TeamRegistrationProps> = ({
                     }}
                     className="absolute top-2 right-2 bg-red-600 hover:bg-red-700 text-white px-2 py-1 rounded text-xs"
                   >
-                    ลบรูป
+                    Remove
                   </button>
                 </div>
               ) : (
@@ -326,10 +326,10 @@ const TeamRegistration: React.FC<TeamRegistrationProps> = ({
               }`}
             >
               {uploadingImages
-                ? 'กำลังอัปโหลดรูป...'
+                ? 'Uploading images...'
                 : isRegistering
-                ? 'กำลังลงทะเบียน...'
-                : 'ลงทะเบียนทีม'}
+                ? 'Registering...'
+                : 'Register Team'}
             </button>
           </div>
         </form>
