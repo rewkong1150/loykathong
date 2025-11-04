@@ -238,7 +238,7 @@ const TeamRegistration: React.FC<TeamRegistrationProps> = ({
             {/* Krathong Image */}
             <div>
               <label className="block font-semibold mb-2 text-slate-200">
-                Krathong Image
+                Krathong Photo
               </label>
               {krathongImagePreview ? (
                 <div className="relative">
@@ -277,7 +277,7 @@ const TeamRegistration: React.FC<TeamRegistrationProps> = ({
             {/* Team Image */}
             <div>
               <label className="block font-semibold mb-2 text-slate-200">
-                Team Photo With Krathong
+                Krathong Photo Selfie With Team
               </label>
               {teamImagePreview ? (
                 <div className="relative">

@@ -303,10 +303,10 @@ const App: React.FC = () => {
         
         <div className="text-center mb-12">
             <h2 className="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-amber-300 to-orange-400 mb-4">
-                Join the Krathong Contest
+                Join owr competition
             </h2>
             <p className="text-lg text-slate-300 max-w-2xl mx-auto mb-6">
-                Create your own krathong and submit it to win prizes! Register your team now.
+                Create your team krathong and submit to win the prizes now.
             </p>
             
             {user && userTeam && (
