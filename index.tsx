@@ -1,6 +1,6 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import { BrowserRouter } from 'react-router-dom'; // ✅ เพิ่มบรรทัดนี้
+import { BrowserRouter } from 'react-router-dom'; // ✅ ต้องเพิ่มบรรทัดนี้
 import App from './App';
 
 const rootElement = document.getElementById('root');
@@ -11,7 +11,7 @@ if (!rootElement) {
 const root = ReactDOM.createRoot(rootElement);
 root.render(
   <React.StrictMode>
-    <BrowserRouter>  {/* ✅ ครอบ App ด้วย BrowserRouter */}
+    <BrowserRouter> {/* ✅ ครอบ App ด้วย Router */}
       <App />
     </BrowserRouter>
   </React.StrictMode>
