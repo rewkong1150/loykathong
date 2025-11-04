@@ -111,10 +111,10 @@ export const updateKrathongScore = async (krathongId: string, amount: number): P
   }
 };
 
-// 🔥 แก้ไขฟังก์ชัน voteForKrathong ให้ return boolean
+// 🔥 แก้ไขฟังก์ชัน voteForKrathong ให้ใช้ transaction อย่างถูกต้อง
 export const voteForKrathong = async (krathongId: string, userId: string): Promise<boolean> => {
   try {
-    // ตรวจสอบก่อนว่าผู้ใช้โหวตไปแล้วหรือยัง
+    // ตรวจสอบก่อนว่าผู้ใช้โหวตไปแล้วหรือยัง (นอก transaction)
     const existingVote = await checkUserVote(userId);
     const votedKrathongIds = Object.keys(existingVote);
     
@@ -125,14 +125,26 @@ export const voteForKrathong = async (krathongId: string, userId: string): Promi
 
     // ใช้ transaction เพื่อความปลอดภัย
     await runTransaction(db, async (transaction) => {
-      // ตรวจสอบอีกครั้งใน transaction
+      // 🔥 อ่านทั้งหมดก่อน (ทั้ง userVote และ krathong)
       const userVoteRef = doc(db, 'userVotes', userId);
-      const userVoteDoc = await transaction.get(userVoteRef);
+      const krathongRef = doc(db, 'krathongs', krathongId);
       
+      const [userVoteDoc, krathongDoc] = await Promise.all([
+        transaction.get(userVoteRef),
+        transaction.get(krathongRef)
+      ]);
+      
+      // ตรวจสอบว่าผู้ใช้ยังไม่โหวต
       if (userVoteDoc.exists() && userVoteDoc.data().votedKrathongId) {
         throw new Error('ALREADY_VOTED');
       }
 
+      // ตรวจสอบว่า krathong มีอยู่
+      if (!krathongDoc.exists()) {
+        throw new Error('KRATHONG_NOT_FOUND');
+      }
+
+      // 🔥 หลังจากอ่านทั้งหมดแล้ว ค่อยเขียน
       // Record the vote
       transaction.set(userVoteRef, {
         votedKrathongId: krathongId,
@@ -142,13 +154,6 @@ export const voteForKrathong = async (krathongId: string, userId: string): Promi
       });
 
       // Update krathong score
-      const krathongRef = doc(db, 'krathongs', krathongId);
-      const krathongDoc = await transaction.get(krathongRef);
-      
-      if (!krathongDoc.exists()) {
-        throw new Error('KRATHONG_NOT_FOUND');
-      }
-
       const currentScore = krathongDoc.data().score || 0;
       transaction.update(krathongRef, {
         score: currentScore + 10,
@@ -164,6 +169,10 @@ export const voteForKrathong = async (krathongId: string, userId: string): Promi
     
     if (error.message === 'ALREADY_VOTED' || error.message.includes('already voted')) {
       return false; // โหวตซ้ำ
+    }
+    
+    if (error.message === 'KRATHONG_NOT_FOUND') {
+      throw new Error('Krathong not found');
     }
     
     throw error; // error อื่นๆ
