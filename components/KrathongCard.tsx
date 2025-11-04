@@ -12,6 +12,8 @@ interface KrathongCardProps {
   onViewDetails: (krathong: Krathong) => void;
   currentUserEmail: string | null;
   votingEnabled: boolean;
+  isUserInTeam: boolean;
+  onCancelVote?: (userId: string) => void;
 }
 
 const KrathongCard: React.FC<KrathongCardProps> = ({ 
@@ -24,10 +26,11 @@ const KrathongCard: React.FC<KrathongCardProps> = ({
     onAdjustScore, 
     onViewDetails,
     currentUserEmail,
-    votingEnabled 
+    votingEnabled,
+    isUserInTeam,
+    onCancelVote
 }) => {
-  const isTeamMember = currentUserEmail ? krathong.members.some(member => member.email === currentUserEmail) : false;
-  const voteButtonDisabled = !canVote || isVotedFor || isVoting || isTeamMember || !votingEnabled;
+  const voteButtonDisabled = !canVote || isVotedFor || isVoting || isUserInTeam || !votingEnabled;
 
   const getButtonContent = () => {
     if (isVoting) {
@@ -41,46 +44,110 @@ const KrathongCard: React.FC<KrathongCardProps> = ({
             </>
         )
     }
-    if (!votingEnabled && canVote) return 'close vote';
-    if (isTeamMember) return 'Can not vote yourteam';
-    if (isVotedFor) return 'voted';
-    if (!canVote) return 'Login for vote';
-    return 'Vote';
+    if (!votingEnabled) return '❌ ระบบโหวตปิดชั่วคราว';
+    if (isUserInTeam) return '❌ ไม่สามารถโหวตทีมตัวเอง';
+    if (isVotedFor) return '✅ โหวตแล้ว';
+    if (!canVote && !currentUserEmail) return '🔐 เข้าสู่ระบบเพื่อโหวต';
+    if (!canVote && currentUserEmail) return '❌ โหวตได้ครั้งเดียวเท่านั้น';
+    return '🎉 โหวตให้ทีมนี้';
+  };
+
+  const getButtonStyles = () => {
+    if (isVotedFor) {
+      return 'bg-green-600 hover:bg-green-700 text-white cursor-default';
+    }
+    if (isUserInTeam) {
+      return 'bg-purple-600 text-white cursor-not-allowed';
+    }
+    if (!votingEnabled || !canVote) {
+      return 'bg-gray-600 text-gray-300 cursor-not-allowed';
+    }
+    return 'bg-gradient-to-r from-amber-400 to-orange-500 hover:from-amber-500 hover:to-orange-600 text-slate-900 font-semibold';
   };
 
   const creatorName = krathong.members && krathong.members.length > 0 ? krathong.members[0].name : 'ไม่ระบุ';
   const teamText = krathong.members.length > 1 ? ` และอีก ${krathong.members.length - 1} คน` : '';
 
   return (
-    <div className="bg-slate-800/50 rounded-xl overflow-hidden shadow-lg transform transition duration-500 hover:scale-105 hover:shadow-amber-500/20 border border-slate-700/50 flex flex-col">
-      <div onClick={() => onViewDetails(krathong)} className="cursor-pointer">
-        <img className="w-full h-56 object-cover" src={krathong.krathongImageUrl} alt={krathong.name} />
+    <div className={`bg-slate-800/50 rounded-xl overflow-hidden shadow-lg transform transition duration-500 hover:scale-105 hover:shadow-amber-500/20 border flex flex-col ${
+      isVotedFor ? 'border-green-500/50' : isUserInTeam ? 'border-purple-500/50' : 'border-slate-700/50'
+    }`}>
+      {/* Badges */}
+      <div className="absolute top-2 left-2 flex flex-col gap-1">
+        {isVotedFor && (
+          <span className="bg-green-600 text-white text-xs px-2 py-1 rounded-full flex items-center gap-1">
+            ✅ โหวตแล้ว
+          </span>
+        )}
+        {isUserInTeam && (
+          <span className="bg-purple-600 text-white text-xs px-2 py-1 rounded-full flex items-center gap-1">
+            👥 ทีมของคุณ
+          </span>
+        )}
+        {isAdmin && (
+          <span className="bg-blue-600 text-white text-xs px-2 py-1 rounded-full">
+            🔧 Admin
+          </span>
+        )}
       </div>
+
+      <div onClick={() => onViewDetails(krathong)} className="cursor-pointer relative">
+        <img 
+          className="w-full h-56 object-cover" 
+          src={krathong.krathongImageUrl} 
+          alt={krathong.name}
+          onError={(e) => {
+            (e.target as HTMLImageElement).src = 'https://via.placeholder.com/300x200/1e293b/64748b?text=Krathong+Image';
+          }}
+        />
+        <div className="absolute bottom-2 right-2 bg-black/70 text-white px-2 py-1 rounded text-sm">
+          🏆 #{krathong.score}
+        </div>
+      </div>
+      
       <div className="p-6 flex flex-col flex-grow">
-        <h3 onClick={() => onViewDetails(krathong)} className="font-bold text-xl mb-2 text-amber-300 cursor-pointer hover:text-amber-200 transition">{krathong.name}</h3>
+        <h3 
+          onClick={() => onViewDetails(krathong)} 
+          className="font-bold text-xl mb-2 text-amber-300 cursor-pointer hover:text-amber-200 transition text-center"
+        >
+          {krathong.name}
+        </h3>
+        
         <div className="flex items-center justify-between mb-4 min-h-[56px] flex-grow">
-            <p className="text-gray-300 text-base">
-                สร้างโดย: <span className="font-semibold">{creatorName}</span><span className="text-sm text-slate-400">{teamText}</span>
+            <p className="text-gray-300 text-sm">
+                สร้างโดย: <span className="font-semibold text-amber-200">{creatorName}</span>
+                {teamText && <span className="text-slate-400 block text-xs">{teamText}</span>}
             </p>
+            
             {isAdmin && (
               <div className="text-right animate-fade-in flex items-center gap-2">
                   <div className="flex flex-col items-center">
-                    <p className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-amber-300 to-orange-400">{krathong.score}</p>
-                    <p className="text-sm text-gray-400">คะแนน</p>
+                    <p className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-amber-300 to-orange-400">
+                      {krathong.score}
+                    </p>
+                    <p className="text-xs text-gray-400">คะแนน</p>
                   </div>
                   <div className="flex flex-col gap-1">
                       <button 
-                        onClick={() => onAdjustScore(krathong.id, 5)}
-                        className="w-8 h-8 flex items-center justify-center bg-green-500/80 hover:bg-green-600 rounded-full text-white font-bold text-xl transition-transform transform hover:scale-110"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onAdjustScore(krathong.id, 5);
+                        }}
+                        className="w-8 h-8 flex items-center justify-center bg-green-500/80 hover:bg-green-600 rounded-full text-white font-bold text-xl transition-transform transform hover:scale-110 active:scale-95"
                         aria-label="เพิ่มคะแนน"
+                        title="เพิ่ม 5 คะแนน"
                       >
                         +
                       </button>
                       <button 
-                        onClick={() => onAdjustScore(krathong.id, -5)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onAdjustScore(krathong.id, -5);
+                        }}
                         disabled={krathong.score === 0}
-                        className="w-8 h-8 flex items-center justify-center bg-red-500/80 hover:bg-red-600 rounded-full text-white font-bold text-xl transition-transform transform hover:scale-110 disabled:bg-slate-600 disabled:cursor-not-allowed disabled:transform-none"
+                        className="w-8 h-8 flex items-center justify-center bg-red-500/80 hover:bg-red-600 rounded-full text-white font-bold text-xl transition-transform transform hover:scale-110 active:scale-95 disabled:bg-slate-600 disabled:cursor-not-allowed disabled:transform-none"
                         aria-label="ลดคะแนน"
+                        title="ลด 5 คะแนน"
                       >
                         -
                       </button>
@@ -88,18 +155,30 @@ const KrathongCard: React.FC<KrathongCardProps> = ({
               </div>
             )}
         </div>
+
+        {/* Status Info */}
+        {(!votingEnabled || isUserInTeam || isVotedFor) && (
+          <div className="mb-3 text-xs text-center text-gray-400">
+            {!votingEnabled && '⚠️ ระบบโหวตปิดชั่วคราว'}
+            {isUserInTeam && '⭐ นี่คือทีมของคุณ'}
+            {isVotedFor && '🎯 คุณได้โหวตให้ทีมนี้แล้ว'}
+          </div>
+        )}
+
         <button
           onClick={() => onVote(krathong.id)}
           disabled={voteButtonDisabled}
-          className={`w-full font-bold py-3 px-4 rounded-lg transition duration-300 flex items-center justify-center mt-auto ${
-            isVotedFor || isTeamMember
-                ? 'bg-gray-600 cursor-not-allowed' 
-                : voteButtonDisabled
-                ? 'bg-gray-500 text-gray-300 cursor-not-allowed'
-                : 'bg-gradient-to-r from-amber-400 to-orange-500 hover:from-amber-500 hover:to-orange-600 text-slate-900'
-          }`}
+          className={`w-full py-3 px-4 rounded-lg transition duration-300 flex items-center justify-center mt-auto ${getButtonStyles()}`}
         >
           {getButtonContent()}
+        </button>
+
+        {/* View Details Button */}
+        <button
+          onClick={() => onViewDetails(krathong)}
+          className="w-full mt-2 py-2 px-4 bg-slate-700/50 hover:bg-slate-600/50 text-gray-300 rounded-lg transition duration-300 text-sm"
+        >
+          👁️ ดูรายละเอียด
         </button>
       </div>
     </div>
