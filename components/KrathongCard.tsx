@@ -101,7 +101,6 @@ const KrathongCard: React.FC<KrathongCardProps> = ({
           }}
         />
         <div className="absolute bottom-2 right-2 bg-black/70 text-white px-2 py-1 rounded text-sm">
-          🏆 #{krathong.score}
         </div>
       </div>
       
