@@ -145,11 +145,11 @@ const TeamRegistration: React.FC<TeamRegistrationProps> = ({
   };
 
   return (
-    <div className="flex flex-col min-h-screen bg-slate-900 text-white">
+    <div className="flex flex-col h-screen bg-slate-900 text-white overflow-hidden">
       {/* Header */}
-      <header className="p-4 bg-slate-800 flex items-center justify-between shadow-md">
+      <header className="p-4 bg-slate-800 flex items-center justify-between shadow-md flex-shrink-0">
         <button
-          onClick={() => close()}
+          onClick={() => navigate(-1)} // ✅ เปลี่ยนจาก close() → navigate(-1)
           className="text-slate-300 hover:text-white transition text-sm"
         >
           ← Back
@@ -160,8 +160,8 @@ const TeamRegistration: React.FC<TeamRegistrationProps> = ({
         <div className="w-10"></div>
       </header>
 
-      {/* Content */}
-      <main className="flex-1 overflow-y-auto">
+      {/* ✅ Scrollable Content */}
+      <main className="flex-1 overflow-y-auto px-4 py-6">
         <form
           onSubmit={handleSubmit}
           className="max-w-2xl mx-auto p-6 space-y-6"
@@ -336,7 +336,7 @@ const TeamRegistration: React.FC<TeamRegistrationProps> = ({
       </main>
 
       {/* Footer */}
-      <footer className="p-3 text-center text-slate-500 text-sm border-t border-slate-700">
+      <footer className="p-3 text-center text-slate-500 text-sm border-t border-slate-700 flex-shrink-0">
         © Loy Krathong Contest 2025
       </footer>
     </div>
