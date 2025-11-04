@@ -8,6 +8,7 @@ import TeamRegistration from './components/TeamRegistration';
 import KrathongDetail from './components/KrathongDetail';
 import { 
   auth, 
+  db, 
   signInWithGoogle, 
   signOutUser,
   getKrathongs,
@@ -15,10 +16,10 @@ import {
   updateKrathongScore,
   voteForKrathong,
   checkUserVote,
-  checkUserInTeam,
-  cancelUserVote
+  checkUserInTeam
 } from './config/firebase';
 
+// List of admin emails
 const ADMIN_EMAILS = [
   'pp.dejpreecha@villacartegroup.com',
   'patomporn.k@villacartegroup.com'
@@ -37,44 +38,53 @@ const App: React.FC = () => {
   const [votingInProgress, setVotingInProgress] = useState<string | null>(null);
   const [userTeam, setUserTeam] = useState<Krathong | null>(null);
   const [isUserAdmin, setIsUserAdmin] = useState(false);
-  const [votedKrathongId, setVotedKrathongId] = useState<string | null>(null);
-  const [lastVoteTime, setLastVoteTime] = useState(0);
-  const [showVoteSuccess, setShowVoteSuccess] = useState(false);
-  const [votedKrathongName, setVotedKrathongName] = useState('');
 
   // Fix scroll issue
   useEffect(() => {
     document.documentElement.style.height = '100%';
+    document.documentElement.style.margin = '0';
+    document.documentElement.style.padding = '0';
     document.body.style.height = '100%';
+    document.body.style.margin = '0';
+    document.body.style.padding = '0';
     document.body.style.overflowY = 'auto';
+
     return () => {
       document.documentElement.style.height = '';
+      document.documentElement.style.margin = '';
+      document.documentElement.style.padding = '';
       document.body.style.height = '';
+      document.body.style.margin = '';
+      document.body.style.padding = '';
       document.body.style.overflowY = '';
     };
   }, []);
 
+  // Check if user is admin
   const checkAdminStatus = (email: string | null): boolean => {
     return email ? ADMIN_EMAILS.includes(email.toLowerCase()) : false;
   };
 
+  // Auth state listener
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged(async (firebaseUser) => {
       if (firebaseUser) {
         setUser(firebaseUser as AppUser);
+        
+        // Check if user is admin
         const adminStatus = checkAdminStatus(firebaseUser.email);
         setIsUserAdmin(adminStatus);
-        if (!adminStatus && isAdminView) setIsAdminView(false);
+        
+        // If user is not admin, make sure admin view is disabled
+        if (!adminStatus && isAdminView) {
+          setIsAdminView(false);
+        }
 
+        // Load user's vote history
         const votes = await checkUserVote(firebaseUser.uid);
         setUserVotes(votes);
 
-        // ✅ ถ้า user เคยโหวตแล้ว ให้จำ id ของ krathong นั้น
-        const votedIds = Object.keys(votes);
-        if (votedIds.length > 0) {
-          setVotedKrathongId(votedIds[0]);
-        }
-
+        // Check if user is in a team
         const team = await checkUserInTeam(firebaseUser.email);
         setUserTeam(team);
       } else {
@@ -82,14 +92,13 @@ const App: React.FC = () => {
         setIsUserAdmin(false);
         setUserVotes({});
         setUserTeam(null);
-        setVotedKrathongId(null);
-        setShowVoteSuccess(false);
       }
     });
 
     return () => unsubscribe();
   }, []);
 
+  // Load krathongs
   useEffect(() => {
     const loadKrathongs = async () => {
       setLoading(true);
@@ -102,6 +111,7 @@ const App: React.FC = () => {
         setLoading(false);
       }
     };
+
     loadKrathongs();
   }, []);
 
@@ -127,29 +137,16 @@ const App: React.FC = () => {
       alert('Please log in to vote');
       return;
     }
+
     if (!votingEnabled) {
       alert('Voting system is temporarily closed');
       return;
     }
 
-    // ⏰ ป้องกันการกดโหวตเร็วเกินไป
-    const now = Date.now();
-    if (now - lastVoteTime < 1000) {
-      alert('Please wait a moment before voting again');
-      return;
-    }
-    setLastVoteTime(now);
-
-    // ❌ ถ้าเคยโหวตให้ Krathong อื่นแล้ว
-    if (votedKrathongId && votedKrathongId !== id) {
-      alert('You have already voted for another krathong! You can only vote once.');
-      return;
-    }
-
-    // 🔒 ป้องกันโหวตให้ทีมตัวเอง
+    // 🔒 Prevent voting for own team
     const krathongToVote = krathongs.find(k => k.id === id);
-    if (krathongToVote && krathongToVote.members.some(m => 
-      m.email.toLowerCase() === user.email?.toLowerCase()
+    if (krathongToVote && krathongToVote.members.some(member => 
+      member.email.toLowerCase() === user.email?.toLowerCase()
     )) {
       alert('You cannot vote for your own team! ❌');
       return;
@@ -161,24 +158,21 @@ const App: React.FC = () => {
     }
 
     setVotingInProgress(id);
+    
     try {
       await voteForKrathong(id, user.uid);
-      setKrathongs(prev =>
-        prev.map(k => k.id === id ? { ...k, score: k.score + 10 } : k)
-          .sort((a, b) => b.score - a.score)
+      
+      // Update local state
+      setKrathongs(prevKrathongs =>
+        prevKrathongs.map(k =>
+          k.id === id ? { ...k, score: k.score + 10 } : k
+        ).sort((a, b) => b.score - a.score)
       );
+      
       setUserVotes(prev => ({ ...prev, [id]: true }));
-      setVotedKrathongId(id);
-
-      const krathongName = krathongs.find(k => k.id === id)?.name || 'Unknown Team';
-      setVotedKrathongName(krathongName);
-      setShowVoteSuccess(true);
       
-      // อัตโนมัติหายหลังจาก 3 วินาที
-      setTimeout(() => {
-        setShowVoteSuccess(false);
-      }, 3000);
-      
+      const krathongName = krathongs.find(k => k.id === id)?.name;
+      alert(`Voted for "${krathongName}" successfully! 🎉`);
     } catch (error) {
       console.error('Vote error:', error);
       alert('An error occurred while voting');
@@ -187,64 +181,39 @@ const App: React.FC = () => {
     }
   };
 
-  // ฟังก์ชันยกเลิกการโหวต (สำหรับ Admin หรือในกรณีพิเศษ)
-  const handleCancelVote = async (userId: string, krathongId: string) => {
-    if (!isUserAdmin) {
-      alert('You do not have permission to cancel votes');
-      return;
-    }
-
-    try {
-      await cancelUserVote(userId, krathongId);
-      setKrathongs(prev =>
-        prev.map(k => 
-          k.id === krathongId ? { ...k, score: Math.max(0, k.score - 10) } : k
-        ).sort((a, b) => b.score - a.score)
-      );
-      
-      // รีเฟรชข้อมูลการโหวต
-      if (user) {
-        const votes = await checkUserVote(user.uid);
-        setUserVotes(votes);
-        const votedIds = Object.keys(votes);
-        setVotedKrathongId(votedIds.length > 0 ? votedIds[0] : null);
-      }
-      
-      alert('Vote cancelled successfully');
-    } catch (error) {
-      console.error('Cancel vote error:', error);
-      alert('Error cancelling vote');
-    }
-  };
-
   const handleRegisterTeam = async (teamName: string, members: TeamMember[], krathongImageUrl: string, teamImageUrl: string) => {
     if (!user) {
       alert('Please log in before registering your team');
       return;
     }
+
+    // Check if user is already in a team
     if (userTeam) {
       alert(`You are already a member of team "${userTeam.name}" and cannot create a new team`);
-      return;
-    }
-    if (!registrationEnabled) {
-      alert('Team registration is currently closed');
       return;
     }
 
     try {
       const newKrathong: Omit<Krathong, 'id'> = {
         name: teamName,
-        krathongImageUrl,
-        teamImageUrl,
+        krathongImageUrl: krathongImageUrl,
+        teamImageUrl: teamImageUrl,
         score: 0,
-        members,
+        members: members,
       };
 
       const krathongId = await addKrathong(newKrathong);
-      const createdKrathong: Krathong = { ...newKrathong, id: krathongId };
+      
+      // Add to local state
+      const createdKrathong: Krathong = {
+        ...newKrathong,
+        id: krathongId
+      };
+      
       setKrathongs(prev => [createdKrathong, ...prev]);
       setUserTeam(createdKrathong);
       setIsRegistrationOpen(false);
+      
       alert(`Team "${teamName}" registered successfully! 🎉`);
       window.scrollTo({ top: 0, behavior: 'smooth' });
     } catch (error) {
@@ -258,11 +227,16 @@ const App: React.FC = () => {
       alert('You do not have permission to adjust the score');
       return;
     }
+
     try {
       await updateKrathongScore(id, amount);
-      setKrathongs(prev =>
-        prev.map(k => 
-          k.id === id ? { ...k, score: Math.max(0, k.score + amount) } : k
+      
+      // Update local state
+      setKrathongs(prevKrathongs =>
+        prevKrathongs.map(k =>
+          k.id === id
+            ? { ...k, score: Math.max(0, k.score + amount) }
+            : k
         ).sort((a, b) => b.score - a.score)
       );
     } catch (error) {
@@ -271,8 +245,13 @@ const App: React.FC = () => {
     }
   };
   
-  const handleViewDetails = (krathong: Krathong) => setSelectedKrathong(krathong);
-  const handleCloseDetails = () => setSelectedKrathong(null);
+  const handleViewDetails = (krathong: Krathong) => {
+    setSelectedKrathong(krathong);
+  };
+  
+  const handleCloseDetails = () => {
+    setSelectedKrathong(null);
+  };
 
   const handleToggleAdminView = () => {
     if (!isUserAdmin) {
@@ -288,7 +267,6 @@ const App: React.FC = () => {
       return;
     }
     setRegistrationEnabled(!registrationEnabled);
-    alert(`Team registration ${!registrationEnabled ? 'enabled' : 'disabled'}`);
   };
 
   const handleToggleVoting = () => {
@@ -297,100 +275,130 @@ const App: React.FC = () => {
       return;
     }
     setVotingEnabled(!votingEnabled);
-    alert(`Voting system ${!votingEnabled ? 'enabled' : 'disabled'}`);
   };
 
   const isUserInTeam = (krathong: Krathong) => {
-    return user && krathong.members.some(m => m.email === user.email);
-  };
-
-  const getVotingStats = () => {
-    const totalVotes = Object.keys(userVotes).length;
-    const totalTeams = krathongs.length;
-    const averageVotes = totalTeams > 0 ? (totalVotes / totalTeams).toFixed(1) : '0';
-    
-    return { totalVotes, totalTeams, averageVotes };
+    return user && krathong.members.some(member => member.email === user.email);
   };
 
   const sortedKrathongs = [...krathongs].sort((a, b) => b.score - a.score);
-  const votingStats = getVotingStats();
 
   return (
-    <div className="min-h-screen text-white flex flex-col">
+    <div 
+      className="min-h-screen text-white flex flex-col"
+      style={{ 
+        minHeight: '100vh',
+        height: '100%'
+      }}
+    >
       <Header 
         user={user} 
         onLogin={handleLogin} 
         onLogout={handleLogout} 
         userTeam={userTeam}
         isAdmin={isUserAdmin}
-        onToggleAdminView={handleToggleAdminView}
-        onToggleRegistration={handleToggleRegistration}
-        onToggleVoting={handleToggleVoting}
-        isAdminView={isAdminView}
-        registrationEnabled={registrationEnabled}
-        votingEnabled={votingEnabled}
-        onOpenRegistration={() => setIsRegistrationOpen(true)}
       />
       
-      {/* Vote Success Notification */}
-      {showVoteSuccess && (
-        <div className="fixed top-20 left-1/2 transform -translate-x-1/2 bg-green-600 text-white px-6 py-3 rounded-lg shadow-lg z-50 animate-bounce">
-          <div className="flex items-center space-x-2">
-            <span className="text-xl">🎉</span>
-            <span>Voted for "{votedKrathongName}" successfully!</span>
-          </div>
-        </div>
-      )}
-
       <main className="container mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-1 w-full">
-        {/* Admin Stats */}
-        {isUserAdmin && isAdminView && (
-          <div className="bg-blue-900/50 rounded-lg p-4 mb-6">
-            <h3 className="text-lg font-semibold mb-2">📊 Voting Statistics</h3>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-              <div className="text-center">
-                <div className="text-2xl font-bold">{votingStats.totalVotes}</div>
-                <div className="text-blue-300">Total Votes</div>
+        
+        <div className="text-center mb-12">
+            <h2 className="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-amber-300 to-orange-400 mb-4">
+                Join our competition
+            </h2>
+            <p className="text-lg text-slate-300 max-w-2xl mx-auto mb-6">
+                Create your team krathong and submit to win the prizes now.
+            </p>
+            
+            {user && userTeam && (
+              <div className="bg-green-900/30 border border-green-500 rounded-lg p-4 mb-6 max-w-2xl mx-auto">
+                <p className="text-green-300 font-semibold">
+                  🎉 You are a member of team: <span className="text-amber-300">{userTeam.name}</span>
+                </p>
+                <p className="text-green-200 text-sm mt-1">
+                  Current Score: <span className="font-bold">{userTeam.score}</span> points
+                </p>
               </div>
-              <div className="text-center">
-                <div className="text-2xl font-bold">{votingStats.totalTeams}</div>
-                <div className="text-blue-300">Total Teams</div>
-              </div>
-              <div className="text-center">
-                <div className="text-2xl font-bold">{votingStats.averageVotes}</div>
-                <div className="text-blue-300">Avg Votes/Team</div>
-              </div>
-            </div>
-          </div>
-        )}
+            )}
 
-        {/* Voting Status Banner */}
-        {user && votedKrathongId && (
-          <div className="bg-yellow-600/50 rounded-lg p-4 mb-6 text-center">
-            <div className="flex items-center justify-center space-x-2">
-              <span className="text-xl">✅</span>
-              <span>
-                You have already voted for{" "}
-                <strong>{krathongs.find(k => k.id === votedKrathongId)?.name || 'a team'}</strong>
-              </span>
-            </div>
-          </div>
-        )}
+            {isUserAdmin && (
+              <div className="bg-amber-900/30 border border-amber-500 rounded-lg p-4 mb-6 max-w-2xl mx-auto">
+                <p className="text-amber-300 font-semibold">
+                  👑 You are an Administrator
+                </p>
+                <p className="text-amber-200 text-sm mt-1">
+                  You have full access to all admin features.
+                </p>
+              </div>
+            )}
 
-        {/* System Status */}
+            <button
+                onClick={() => {
+                  if (!user) {
+                    handleLogin();
+                    return;
+                  }
+                  if (userTeam) {
+                    alert(`You are already a member of team "${userTeam.name}" and cannot create a new team`);
+                    return;
+                  }
+                  setIsRegistrationOpen(true);
+                }}
+                disabled={!registrationEnabled}
+                className={`font-bold py-3 px-8 rounded-full transition duration-300 ease-in-out transform hover:scale-105 text-lg shadow-lg ${
+                  registrationEnabled 
+                  ? 'bg-gradient-to-r from-green-400 to-teal-500 hover:from-green-500 hover:to-teal-600 text-white' 
+                  : 'bg-slate-600 text-slate-400 cursor-not-allowed'
+                }`}
+            >
+                {!user ? 'Register' : 
+                 userTeam ? 'You have already registered a team' :
+                 registrationEnabled ? 'Register Your Team' : 'Registration Closed'}
+            </button>
+        </div>
+
+        {/* Admin Controls */}
         {isUserAdmin && (
-          <div className="bg-gray-800/50 rounded-lg p-3 mb-6 text-sm">
-            <div className="flex flex-wrap gap-4 justify-center">
-              <div className={`px-3 py-1 rounded-full ${registrationEnabled ? 'bg-green-600' : 'bg-red-600'}`}>
-                Registration: {registrationEnabled ? 'OPEN' : 'CLOSED'}
+          <div className="flex justify-center items-center gap-6 mb-8 flex-wrap">
+            <label className="relative inline-flex items-center cursor-pointer">
+                <input 
+                  type="checkbox" 
+                  checked={isAdminView} 
+                  onChange={handleToggleAdminView}
+                  className="sr-only peer" 
+                />
+                <div className="w-14 h-8 bg-slate-700 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-amber-300/50 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-1 after:left-[4px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-amber-500"></div>
+                <span className="ml-3 text-md font-medium text-slate-200">
+                    {isAdminView ? 'Admin View' : 'User View'}
+                </span>
+            </label>
+            {isAdminView && (
+              <div className="flex justify-center items-center gap-6 flex-wrap animate-fade-in">
+                <label className="relative inline-flex items-center cursor-pointer">
+                  <input 
+                    type="checkbox" 
+                    checked={registrationEnabled} 
+                    onChange={handleToggleRegistration}
+                    className="sr-only peer" 
+                  />
+                  <div className="w-14 h-8 bg-slate-700 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-green-300/50 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-1 after:left-[4px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-green-500"></div>
+                  <span className="ml-3 text-md font-medium text-slate-200">
+                      {registrationEnabled ? 'Registration Open' : 'Registration Closed'}
+                  </span>
+                </label>
+                 <label className="relative inline-flex items-center cursor-pointer">
+                  <input 
+                    type="checkbox" 
+                    checked={votingEnabled} 
+                    onChange={handleToggleVoting}
+                    className="sr-only peer" 
+                  />
+                  <div className="w-14 h-8 bg-slate-700 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-sky-300/50 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-1 after:left-[4px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-sky-500"></div>
+                  <span className="ml-3 text-md font-medium text-slate-200">
+                      {votingEnabled ? 'Voting Open' : 'Voting Closed'}
+                  </span>
+                </label>
               </div>
-              <div className={`px-3 py-1 rounded-full ${votingEnabled ? 'bg-green-600' : 'bg-red-600'}`}>
-                Voting: {votingEnabled ? 'OPEN' : 'CLOSED'}
-              </div>
-              <div className={`px-3 py-1 rounded-full ${isAdminView ? 'bg-purple-600' : 'bg-gray-600'}`}>
-                Admin View: {isAdminView ? 'ON' : 'OFF'}
-              </div>
-            </div>
+            )}
           </div>
         )}
 
@@ -400,7 +408,7 @@ const App: React.FC = () => {
           </div>
         ) : (
           <>
-            {/* Mobile View */}
+            {/* Mobile View - Horizontal Scroll */}
             <div className="md:hidden">
               <div className="flex overflow-x-auto space-x-4 pb-4 -mx-4 px-4 snap-x snap-mandatory">
                 {sortedKrathongs.map((krathong) => (
@@ -408,8 +416,8 @@ const App: React.FC = () => {
                     <KrathongCard
                       krathong={krathong}
                       onVote={handleVote}
-                      canVote={!!user && votingEnabled && !votedKrathongId}
-                      isVotedFor={votedKrathongId === krathong.id}
+                      canVote={!!user && votingEnabled}
+                      isVotedFor={!!userVotes[krathong.id]}
                       isVoting={votingInProgress === krathong.id}
                       isAdmin={isAdminView && isUserAdmin}
                       onAdjustScore={handleAdjustScore}
@@ -417,22 +425,21 @@ const App: React.FC = () => {
                       currentUserEmail={user?.email || null}
                       votingEnabled={votingEnabled}
                       isUserInTeam={isUserInTeam(krathong)}
-                      onCancelVote={(userId) => handleCancelVote(userId, krathong.id)}
                     />
                   </div>
                 ))}
               </div>
             </div>
 
-            {/* Desktop View */}
+            {/* Desktop View - Grid */}
             <div className="hidden md:grid md:grid-cols-2 lg:grid-cols-3 gap-6">
               {sortedKrathongs.map((krathong) => (
                 <div key={krathong.id}>
                   <KrathongCard
                     krathong={krathong}
                     onVote={handleVote}
-                    canVote={!!user && votingEnabled && !votedKrathongId}
-                    isVotedFor={votedKrathongId === krathong.id}
+                    canVote={!!user && votingEnabled}
+                    isVotedFor={!!userVotes[krathong.id]}
                     isVoting={votingInProgress === krathong.id}
                     isAdmin={isAdminView && isUserAdmin}
                     onAdjustScore={handleAdjustScore}
@@ -440,29 +447,11 @@ const App: React.FC = () => {
                     currentUserEmail={user?.email || null}
                     votingEnabled={votingEnabled}
                     isUserInTeam={isUserInTeam(krathong)}
-                    onCancelVote={(userId) => handleCancelVote(userId, krathong.id)}
                   />
                 </div>
               ))}
             </div>
           </>
-        )}
-
-        {/* Empty State */}
-        {!loading && krathongs.length === 0 && (
-          <div className="text-center py-12">
-            <div className="text-6xl mb-4">🏮</div>
-            <h3 className="text-2xl font-semibold mb-2">No Teams Registered Yet</h3>
-            <p className="text-gray-400 mb-6">Be the first to register your team!</p>
-            {user && registrationEnabled && (
-              <button
-                onClick={() => setIsRegistrationOpen(true)}
-                className="bg-gradient-to-r from-purple-600 to-pink-600 px-6 py-3 rounded-lg font-semibold hover:from-purple-700 hover:to-pink-700 transition-all"
-              >
-                Register Your Team
-              </button>
-            )}
-          </div>
         )}
       </main>
 
@@ -471,32 +460,27 @@ const App: React.FC = () => {
         onClose={() => setIsRegistrationOpen(false)}
         title="Team Registration"
       >
-        <TeamRegistration 
-          onRegister={handleRegisterTeam} 
-          currentUser={user}
-          registrationEnabled={registrationEnabled}
-        />
+          <TeamRegistration 
+            onRegister={handleRegisterTeam} 
+            currentUser={user}
+          />
       </Modal>
 
       <Modal
         isOpen={!!selectedKrathong}
         onClose={handleCloseDetails}
         title={selectedKrathong?.name ?? 'Krathong Details'}
-        size="lg"
       >
         {selectedKrathong && (
           <KrathongDetail 
             krathong={selectedKrathong} 
             currentUserEmail={user?.email || null}
-            isAdmin={isUserAdmin}
-            onCancelVote={handleCancelVote}
           />
         )}
       </Modal>
 
       <footer className="text-center py-6 text-slate-500 text-sm mt-auto">
-        <p>Developed with ❤️ for Loy Krathong Festival 2024</p>
-        <p className="mt-1">Total Teams: {krathongs.length} | Total Votes: {votingStats.totalVotes}</p>
+        <p>Developed with ❤️ for Loy Krathong Festival</p>
       </footer>
     </div>
   );
