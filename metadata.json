@@ -1,0 +1,5 @@
+{
+  "name": "Krathong Contest",
+  "description": "A web application to host a Krathong contest. Users can sign in with Google to vote for their favorite Krathong. Each vote is worth 10 points. Designated admin users can add new Krathongs to the contest.",
+  "requestFramePermissions": []
+}
