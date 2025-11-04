@@ -303,7 +303,7 @@ const App: React.FC = () => {
         
         <div className="text-center mb-12">
             <h2 className="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-amber-300 to-orange-400 mb-4">
-                Join owr competition
+                Join our competition
             </h2>
             <p className="text-lg text-slate-300 max-w-2xl mx-auto mb-6">
                 Create your team krathong and submit to win the prizes now.
@@ -350,7 +350,7 @@ const App: React.FC = () => {
                   : 'bg-slate-600 text-slate-400 cursor-not-allowed'
                 }`}
             >
-                {!user ? 'Log in to Register' : 
+                {!user ? 'Register' : 
                  userTeam ? 'You have already registered a team' :
                  registrationEnabled ? 'Register Your Team' : 'Registration Closed'}
             </button>
