@@ -165,7 +165,7 @@ const App: React.FC = () => {
       // Update local state
       setKrathongs(prevKrathongs =>
         prevKrathongs.map(k =>
-          k.id === id ? { ...k, score: k.score + 1 } : k
+          k.id === id ? { ...k, score: k.score + 10 } : k
         ).sort((a, b) => b.score - a.score)
       );
       
