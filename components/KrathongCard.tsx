@@ -40,16 +40,16 @@ const KrathongCard: React.FC<KrathongCardProps> = ({
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                 </svg>
-                กำลังโหวต...
+                Voting...
             </>
         )
     }
-    if (!votingEnabled) return '❌ ระบบโหวตปิดชั่วคราว';
-    if (isUserInTeam) return '❌ ไม่สามารถโหวตทีมตัวเอง';
-    if (isVotedFor) return '✅ โหวตแล้ว';
-    if (!canVote && !currentUserEmail) return '🔐 เข้าสู่ระบบเพื่อโหวต';
-    if (!canVote && currentUserEmail) return '❌ โหวตได้ครั้งเดียวเท่านั้น';
-    return '🎉 โหวตให้ทีมนี้';
+    if (!votingEnabled) return '❌ Voting Closed';
+    if (isUserInTeam) return '❌ Cannot Vote Your Team';
+    if (isVotedFor) return '✅ Voted';
+    if (!canVote && !currentUserEmail) return '🔐 Login to Vote';
+    if (!canVote && currentUserEmail) return '❌ One Vote Only';
+    return '🎉 Vote for This Team';
   };
 
   const getButtonStyles = () => {
@@ -65,8 +65,8 @@ const KrathongCard: React.FC<KrathongCardProps> = ({
     return 'bg-gradient-to-r from-amber-400 to-orange-500 hover:from-amber-500 hover:to-orange-600 text-slate-900 font-semibold';
   };
 
-  const creatorName = krathong.members && krathong.members.length > 0 ? krathong.members[0].name : 'ไม่ระบุ';
-  const teamText = krathong.members.length > 1 ? ` และอีก ${krathong.members.length - 1} คน` : '';
+  const creatorName = krathong.members && krathong.members.length > 0 ? krathong.members[0].name : 'Unknown';
+  const teamText = krathong.members.length > 1 ? ` and ${krathong.members.length - 1} others` : '';
 
   return (
     <div className={`bg-slate-800/50 rounded-xl overflow-hidden shadow-lg transform transition duration-500 hover:scale-105 hover:shadow-amber-500/20 border flex flex-col ${
@@ -76,12 +76,12 @@ const KrathongCard: React.FC<KrathongCardProps> = ({
       <div className="absolute top-2 left-2 flex flex-col gap-1">
         {isVotedFor && (
           <span className="bg-green-600 text-white text-xs px-2 py-1 rounded-full flex items-center gap-1">
-            ✅ โหวตแล้ว
+            ✅ Voted
           </span>
         )}
         {isUserInTeam && (
           <span className="bg-purple-600 text-white text-xs px-2 py-1 rounded-full flex items-center gap-1">
-            👥 ทีมของคุณ
+            👥 Your Team
           </span>
         )}
         {isAdmin && (
@@ -115,7 +115,7 @@ const KrathongCard: React.FC<KrathongCardProps> = ({
         
         <div className="flex items-center justify-between mb-4 min-h-[56px] flex-grow">
             <p className="text-gray-300 text-sm">
-                สร้างโดย: <span className="font-semibold text-amber-200">{creatorName}</span>
+                Created by: <span className="font-semibold text-amber-200">{creatorName}</span>
                 {teamText && <span className="text-slate-400 block text-xs">{teamText}</span>}
             </p>
             
@@ -125,7 +125,7 @@ const KrathongCard: React.FC<KrathongCardProps> = ({
                     <p className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-amber-300 to-orange-400">
                       {krathong.score}
                     </p>
-                    <p className="text-xs text-gray-400">คะแนน</p>
+                    <p className="text-xs text-gray-400">Points</p>
                   </div>
                   <div className="flex flex-col gap-1">
                       <button 
@@ -134,8 +134,8 @@ const KrathongCard: React.FC<KrathongCardProps> = ({
                           onAdjustScore(krathong.id, 5);
                         }}
                         className="w-8 h-8 flex items-center justify-center bg-green-500/80 hover:bg-green-600 rounded-full text-white font-bold text-xl transition-transform transform hover:scale-110 active:scale-95"
-                        aria-label="เพิ่มคะแนน"
-                        title="เพิ่ม 5 คะแนน"
+                        aria-label="Increase score"
+                        title="Add 5 points"
                       >
                         +
                       </button>
@@ -146,8 +146,8 @@ const KrathongCard: React.FC<KrathongCardProps> = ({
                         }}
                         disabled={krathong.score === 0}
                         className="w-8 h-8 flex items-center justify-center bg-red-500/80 hover:bg-red-600 rounded-full text-white font-bold text-xl transition-transform transform hover:scale-110 active:scale-95 disabled:bg-slate-600 disabled:cursor-not-allowed disabled:transform-none"
-                        aria-label="ลดคะแนน"
-                        title="ลด 5 คะแนน"
+                        aria-label="Decrease score"
+                        title="Remove 5 points"
                       >
                         -
                       </button>
@@ -159,9 +159,9 @@ const KrathongCard: React.FC<KrathongCardProps> = ({
         {/* Status Info */}
         {(!votingEnabled || isUserInTeam || isVotedFor) && (
           <div className="mb-3 text-xs text-center text-gray-400">
-            {!votingEnabled && '⚠️ ระบบโหวตปิดชั่วคราว'}
-            {isUserInTeam && '⭐ นี่คือทีมของคุณ'}
-            {isVotedFor && '🎯 คุณได้โหวตให้ทีมนี้แล้ว'}
+            {!votingEnabled && '⚠️ Voting is temporarily closed'}
+            {isUserInTeam && '⭐ This is your team'}
+            {isVotedFor && '🎯 You voted for this team'}
           </div>
         )}
 
@@ -178,7 +178,7 @@ const KrathongCard: React.FC<KrathongCardProps> = ({
           onClick={() => onViewDetails(krathong)}
           className="w-full mt-2 py-2 px-4 bg-slate-700/50 hover:bg-slate-600/50 text-gray-300 rounded-lg transition duration-300 text-sm"
         >
-          👁️ ดูรายละเอียด
+          👁️ View Details
         </button>
       </div>
     </div>
