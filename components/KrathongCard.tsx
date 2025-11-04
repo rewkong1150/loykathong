@@ -41,11 +41,11 @@ const KrathongCard: React.FC<KrathongCardProps> = ({
             </>
         )
     }
-    if (!votingEnabled && canVote) return 'ปิดการโหวต';
-    if (isTeamMember) return 'ไม่สามารถโหวตให้ทีมตัวเอง';
-    if (isVotedFor) return 'โหวตแล้ว';
-    if (!canVote) return 'เข้าสู่ระบบเพื่อโหวต';
-    return 'โหวตกระทงนี้';
+    if (!votingEnabled && canVote) return 'close vote';
+    if (isTeamMember) return 'Can not vote yourteam';
+    if (isVotedFor) return 'voted';
+    if (!canVote) return 'Login for vote';
+    return 'Vote';
   };
 
   const creatorName = krathong.members && krathong.members.length > 0 ? krathong.members[0].name : 'ไม่ระบุ';
