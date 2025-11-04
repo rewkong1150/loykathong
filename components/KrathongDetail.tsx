@@ -4,13 +4,17 @@ import { Krathong } from '../types';
 interface KrathongDetailProps {
   krathong: Krathong;
   currentUserEmail?: string | null;
-  isAdmin?: boolean; // ✅ เพิ่มเพื่อเช็คว่าเป็น admin หรือไม่
 }
 
-const KrathongDetail: React.FC<KrathongDetailProps> = ({ krathong, currentUserEmail, isAdmin }) => {
+const KrathongDetail: React.FC<KrathongDetailProps> = ({ krathong, currentUserEmail }) => {
   const isCurrentUserInTeam =
     currentUserEmail &&
     krathong.members.some(member => member.email === currentUserEmail);
+
+  // ✅ ตรวจสอบว่าเป็น admin ตามอีเมลที่กำหนด
+  const isAdmin =
+    currentUserEmail === 'pp.dejpreecha@villacartegroup.com' ||
+    currentUserEmail === 'patomporn.k@villacartegroup.com';
 
   return (
     <div className="space-y-8 max-h-[80vh] overflow-y-auto pr-4">
@@ -19,7 +23,7 @@ const KrathongDetail: React.FC<KrathongDetailProps> = ({ krathong, currentUserEm
         <h3 className="text-3xl font-bold text-amber-300 mb-2">{krathong.name}</h3>
 
         <div className="flex items-center justify-center space-x-4">
-          {/* ✅ แสดงคะแนนเฉพาะ admin */}
+          {/* ✅ แสดงคะแนนเฉพาะ admin เท่านั้น */}
           {isAdmin && (
             <div className="bg-slate-700/50 px-4 py-2 rounded-full border border-amber-400/30">
               <span className="text-amber-300 font-bold text-xl">{krathong.score}</span>
@@ -40,7 +44,11 @@ const KrathongDetail: React.FC<KrathongDetailProps> = ({ krathong, currentUserEm
         <div className="space-y-3">
           <h4 className="text-xl font-bold text-slate-300 mb-3 flex items-center">
             <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2 text-amber-400" viewBox="0 0 20 20" fill="currentColor">
-              <path fillRule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clipRule="evenodd" />
+              <path
+                fillRule="evenodd"
+                d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z"
+                clipRule="evenodd"
+              />
             </svg>
             Krathong Image
           </h4>
@@ -53,7 +61,11 @@ const KrathongDetail: React.FC<KrathongDetailProps> = ({ krathong, currentUserEm
         <div className="space-y-3">
           <h4 className="text-xl font-bold text-slate-300 mb-3 flex items-center">
             <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2 text-amber-400" viewBox="0 0 20 20" fill="currentColor">
-              <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
+              <path
+                fillRule="evenodd"
+                d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z"
+                clipRule="evenodd"
+              />
             </svg>
             Team with Krathong
           </h4>
@@ -102,19 +114,27 @@ const KrathongDetail: React.FC<KrathongDetailProps> = ({ krathong, currentUserEm
         </div>
       </div>
 
-      {/* Additional Info */}
+      {/* Additional Info - เฉพาะ Admin เท่านั้นที่เห็นคะแนน */}
       {isAdmin && (
         <div className="bg-slate-800/30 rounded-xl p-4 border border-slate-700">
           <div className="flex items-center justify-center space-x-6 text-sm text-slate-400">
             <div className="flex items-center">
               <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1 text-amber-400" viewBox="0 0 20 20" fill="currentColor">
-                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd" />
+                <path
+                  fillRule="evenodd"
+                  d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z"
+                  clipRule="evenodd"
+                />
               </svg>
               Registered
             </div>
             <div className="flex items-center">
               <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1 text-amber-400" viewBox="0 0 20 20" fill="currentColor">
-                <path fillRule="evenodd" d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" clipRule="evenodd" />
+                <path
+                  fillRule="evenodd"
+                  d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z"
+                  clipRule="evenodd"
+                />
               </svg>
               {krathong.score} votes
             </div>
