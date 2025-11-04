@@ -117,7 +117,7 @@ export const voteForKrathong = async (krathongId: string, userId: string): Promi
     }, { merge: true });
 
     // Update krathong score
-    await updateKrathongScore(krathongId, 1);
+    await updateKrathongScore(krathongId, 10);
   } catch (error) {
     console.error('Error voting:', error);
     throw error;
