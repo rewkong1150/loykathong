@@ -329,7 +329,7 @@ const TeamRegistration: React.FC<TeamRegistrationProps> = ({
                 ? 'Uploading images...'
                 : isRegistering
                 ? 'Registering...'
-                : 'Register Team'}
+                : 'Submit'}
             </button>
           </div>
         </form>
