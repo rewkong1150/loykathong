@@ -69,8 +69,7 @@ const App: React.FC = () => {
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged(async (firebaseUser) => {
       if (firebaseUser) {
-        const appUser = firebaseUser as AppUser;
-        setUser(appUser);
+        setUser(firebaseUser as AppUser);
         
         // Check if user is admin
         const adminStatus = checkAdminStatus(firebaseUser.email);
@@ -81,18 +80,13 @@ const App: React.FC = () => {
           setIsAdminView(false);
         }
 
-        try {
-          // Load user's vote history
-          const votes = await checkUserVote(firebaseUser.uid);
-          console.log('User votes loaded:', votes); // Debug log
-          setUserVotes(votes);
+        // Load user's vote history
+        const votes = await checkUserVote(firebaseUser.uid);
+        setUserVotes(votes);
 
-          // Check if user is in a team
-          const team = await checkUserInTeam(firebaseUser.email);
-          setUserTeam(team);
-        } catch (error) {
-          console.error('Error loading user data:', error);
-        }
+        // Check if user is in a team
+        const team = await checkUserInTeam(firebaseUser.email);
+        setUserTeam(team);
       } else {
         setUser(null);
         setIsUserAdmin(false);
@@ -158,7 +152,6 @@ const App: React.FC = () => {
       return;
     }
 
-    // Check if already voted (both client-side and server-side)
     if (userVotes[id]) {
       alert('You have already voted for this krathong!');
       return;
@@ -167,40 +160,22 @@ const App: React.FC = () => {
     setVotingInProgress(id);
     
     try {
-      // Call vote function - this should handle server-side duplicate prevention
-      const voteSuccess = await voteForKrathong(id, user.uid);
+      await voteForKrathong(id, user.uid);
       
-      if (!voteSuccess) {
-        alert('You have already voted for this krathong or an error occurred!');
-        return;
-      }
-
-      // Update local state only if vote was successful
+      // Update local state
       setKrathongs(prevKrathongs =>
         prevKrathongs.map(k =>
           k.id === id ? { ...k, score: k.score + 10 } : k
         ).sort((a, b) => b.score - a.score)
       );
       
-      // Update user votes
       setUserVotes(prev => ({ ...prev, [id]: true }));
       
       const krathongName = krathongs.find(k => k.id === id)?.name;
       alert(`Voted for "${krathongName}" successfully! 🎉`);
-    } catch (error: any) {
+    } catch (error) {
       console.error('Vote error:', error);
-      
-      // Handle specific error cases
-      if (error.message?.includes('already voted') || error.code === 'already-voted') {
-        alert('You have already voted for this krathong!');
-        // Refresh user votes to get current state
-        if (user) {
-          const updatedVotes = await checkUserVote(user.uid);
-          setUserVotes(updatedVotes);
-        }
-      } else {
-        alert('An error occurred while voting. Please try again.');
-      }
+      alert('An error occurred while voting');
     } finally {
       setVotingInProgress(null);
     }
@@ -215,16 +190,6 @@ const App: React.FC = () => {
     // Check if user is already in a team
     if (userTeam) {
       alert(`You are already a member of team "${userTeam.name}" and cannot create a new team`);
-      return;
-    }
-
-    // Check if user email is in the members list
-    const userInMembers = members.some(member => 
-      member.email.toLowerCase() === user.email?.toLowerCase()
-    );
-
-    if (!userInMembers) {
-      alert('You must include yourself in the team members list!');
       return;
     }
 
@@ -313,9 +278,7 @@ const App: React.FC = () => {
   };
 
   const isUserInTeam = (krathong: Krathong) => {
-    return user && krathong.members.some(member => 
-      member.email.toLowerCase() === user.email?.toLowerCase()
-    );
+    return user && krathong.members.some(member => member.email === user.email);
   };
 
   const sortedKrathongs = [...krathongs].sort((a, b) => b.score - a.score);
@@ -378,15 +341,11 @@ const App: React.FC = () => {
                     alert(`You are already a member of team "${userTeam.name}" and cannot create a new team`);
                     return;
                   }
-                  if (!registrationEnabled) {
-                    alert('Registration is currently closed');
-                    return;
-                  }
                   setIsRegistrationOpen(true);
                 }}
-                disabled={!registrationEnabled && !userTeam}
+                disabled={!registrationEnabled}
                 className={`font-bold py-3 px-8 rounded-full transition duration-300 ease-in-out transform hover:scale-105 text-lg shadow-lg ${
-                  registrationEnabled && !userTeam
+                  registrationEnabled 
                   ? 'bg-gradient-to-r from-green-400 to-teal-500 hover:from-green-500 hover:to-teal-600 text-white' 
                   : 'bg-slate-600 text-slate-400 cursor-not-allowed'
                 }`}
@@ -457,7 +416,7 @@ const App: React.FC = () => {
                     <KrathongCard
                       krathong={krathong}
                       onVote={handleVote}
-                      canVote={!!user && votingEnabled && !userVotes[krathong.id]}
+                      canVote={!!user && votingEnabled}
                       isVotedFor={!!userVotes[krathong.id]}
                       isVoting={votingInProgress === krathong.id}
                       isAdmin={isAdminView && isUserAdmin}
@@ -479,7 +438,7 @@ const App: React.FC = () => {
                   <KrathongCard
                     krathong={krathong}
                     onVote={handleVote}
-                    canVote={!!user && votingEnabled && !userVotes[krathong.id]}
+                    canVote={!!user && votingEnabled}
                     isVotedFor={!!userVotes[krathong.id]}
                     isVoting={votingInProgress === krathong.id}
                     isAdmin={isAdminView && isUserAdmin}
