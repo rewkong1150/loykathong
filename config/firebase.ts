@@ -20,7 +20,8 @@ import {
   increment,
   getDoc,
   setDoc,
-  deleteField
+  deleteField,
+  runTransaction // 👈 เพิ่ม import นี้
 } from 'firebase/firestore';
 import { Krathong } from '../types';
 
@@ -110,29 +111,62 @@ export const updateKrathongScore = async (krathongId: string, amount: number): P
   }
 };
 
-export const voteForKrathong = async (krathongId: string, userId: string): Promise<void> => {
+// 🔥 แก้ไขฟังก์ชัน voteForKrathong ให้ return boolean
+export const voteForKrathong = async (krathongId: string, userId: string): Promise<boolean> => {
   try {
     // ตรวจสอบก่อนว่าผู้ใช้โหวตไปแล้วหรือยัง
     const existingVote = await checkUserVote(userId);
     const votedKrathongIds = Object.keys(existingVote);
     
     if (votedKrathongIds.length > 0) {
-      throw new Error('User has already voted');
+      console.log('User has already voted for:', votedKrathongIds[0]);
+      return false; // โหวตซ้ำ
     }
 
-    // Record the vote in user's vote history (เก็บแค่ krathongId เดียว)
-    const userVoteRef = doc(db, 'userVotes', userId);
-    await setDoc(userVoteRef, {
-      votedKrathongId: krathongId, // 👈 เปลี่ยนจาก array เป็น field เดียว
-      votedAt: new Date().toISOString(),
-      userEmail: auth.currentUser?.email // เก็บ email ด้วยสำหรับการตรวจสอบ
+    // ใช้ transaction เพื่อความปลอดภัย
+    await runTransaction(db, async (transaction) => {
+      // ตรวจสอบอีกครั้งใน transaction
+      const userVoteRef = doc(db, 'userVotes', userId);
+      const userVoteDoc = await transaction.get(userVoteRef);
+      
+      if (userVoteDoc.exists() && userVoteDoc.data().votedKrathongId) {
+        throw new Error('ALREADY_VOTED');
+      }
+
+      // Record the vote
+      transaction.set(userVoteRef, {
+        votedKrathongId: krathongId,
+        votedAt: new Date().toISOString(),
+        userEmail: auth.currentUser?.email,
+        userId: userId
+      });
+
+      // Update krathong score
+      const krathongRef = doc(db, 'krathongs', krathongId);
+      const krathongDoc = await transaction.get(krathongRef);
+      
+      if (!krathongDoc.exists()) {
+        throw new Error('KRATHONG_NOT_FOUND');
+      }
+
+      const currentScore = krathongDoc.data().score || 0;
+      transaction.update(krathongRef, {
+        score: currentScore + 10,
+        updatedAt: new Date().toISOString()
+      });
     });
 
-    // Update krathong score
-    await updateKrathongScore(krathongId, 10);
-  } catch (error) {
+    console.log('Vote successful for krathong:', krathongId);
+    return true; // โหวตสำเร็จ
+
+  } catch (error: any) {
     console.error('Error voting:', error);
-    throw error;
+    
+    if (error.message === 'ALREADY_VOTED' || error.message.includes('already voted')) {
+      return false; // โหวตซ้ำ
+    }
+    
+    throw error; // error อื่นๆ
   }
 };
 
@@ -143,7 +177,6 @@ export const checkUserVote = async (userId: string): Promise<Record<string, bool
     
     if (userVoteDoc.exists()) {
       const data = userVoteDoc.data();
-      // 👇 เปลี่ยนจากการอ่าน array มาเป็นอ่าน field เดียว
       if (data.votedKrathongId) {
         return { [data.votedKrathongId]: true };
       }
@@ -156,19 +189,27 @@ export const checkUserVote = async (userId: string): Promise<Record<string, bool
   }
 };
 
-// 🔥 ฟังก์ชันใหม่: ยกเลิกการโหวต
-export const cancelUserVote = async (userId: string, krathongId: string): Promise<void> => {
+// 🔥 ฟังก์ชันใหม่: ยกเลิกการโหวต (สำหรับ admin)
+export const cancelUserVote = async (userId: string, krathongId: string): Promise<boolean> => {
   try {
     const userVoteRef = doc(db, 'userVotes', userId);
+    const userVoteDoc = await getDoc(userVoteRef);
     
+    if (!userVoteDoc.exists() || userVoteDoc.data().votedKrathongId !== krathongId) {
+      return false; // ไม่พบการโหวต
+    }
+
     // ลบข้อมูลการโหวต
     await updateDoc(userVoteRef, {
       votedKrathongId: deleteField(),
-      votedAt: deleteField()
+      votedAt: deleteField(),
+      userEmail: deleteField()
     });
     
     // ลดคะแนนของ krathong
     await updateKrathongScore(krathongId, -10);
+    
+    return true; // ยกเลิกสำเร็จ
   } catch (error) {
     console.error('Error canceling vote:', error);
     throw error;
@@ -181,7 +222,7 @@ export const checkUserInTeam = async (userEmail: string | null): Promise<Krathon
   try {
     const q = query(
       collection(db, 'krathongs'),
-      where('members', 'array-contains', { email: userEmail.toLowerCase() }) // 👈 ใช้ lowercase
+      where('members', 'array-contains', { email: userEmail.toLowerCase() })
     );
     const querySnapshot = await getDocs(q);
     
@@ -215,11 +256,9 @@ export const uploadImage = async (file: File, path: string): Promise<string> => 
 // 🔥 ฟังก์ชันใหม่: ดึงสถิติการโหวต
 export const getVotingStats = async () => {
   try {
-    // นับจำนวน user ที่โหวตแล้ว
     const userVotesSnapshot = await getDocs(collection(db, 'userVotes'));
     const totalVotes = userVotesSnapshot.size;
     
-    // นับจำนวนทีม
     const krathongsSnapshot = await getDocs(collection(db, 'krathongs'));
     const totalTeams = krathongsSnapshot.size;
     
@@ -231,5 +270,23 @@ export const getVotingStats = async () => {
   } catch (error) {
     console.error('Error getting voting stats:', error);
     return { totalVotes: 0, totalTeams: 0, averageVotes: '0' };
+  }
+};
+
+// 🔥 ฟังก์ชันใหม่: ตรวจสอบว่า user โหวต krathong นี้ไปแล้วหรือไม่
+export const hasUserVotedForKrathong = async (userId: string, krathongId: string): Promise<boolean> => {
+  try {
+    const userVoteRef = doc(db, 'userVotes', userId);
+    const userVoteDoc = await getDoc(userVoteRef);
+    
+    if (userVoteDoc.exists()) {
+      const data = userVoteDoc.data();
+      return data.votedKrathongId === krathongId;
+    }
+    
+    return false;
+  } catch (error) {
+    console.error('Error checking specific vote:', error);
+    return false;
   }
 };
