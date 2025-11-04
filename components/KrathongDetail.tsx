@@ -18,7 +18,6 @@ const KrathongDetail: React.FC<KrathongDetailProps> = ({ krathong, currentUserEm
         <div className="flex items-center justify-center space-x-4">
           <div className="bg-slate-700/50 px-4 py-2 rounded-full border border-amber-400/30">
             <span className="text-amber-300 font-bold text-xl">{krathong.score}</span>
-            <span className="text-slate-300 ml-2">votes</span>
           </div>
           {isCurrentUserInTeam && (
             <span className="bg-green-500 text-white text-sm px-3 py-1 rounded-full font-medium">
