@@ -1,6 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { TeamMember, AppUser } from '../types';
 import { uploadImage } from '../config/firebase';
+import { useNavigate } from 'react-router-dom'; // ✅ เพิ่มบรรทัดนี้
 
 interface TeamRegistrationProps {
   onRegister: (
@@ -16,6 +17,7 @@ const TeamRegistration: React.FC<TeamRegistrationProps> = ({
   onRegister,
   currentUser,
 }) => {
+  const navigate = useNavigate(); // ✅ ใช้ navigate() สำหรับย้อนกลับ
   const [teamName, setTeamName] = useState('');
   const [members, setMembers] = useState<TeamMember[]>([]);
   const [memberName, setMemberName] = useState('');
@@ -165,8 +167,15 @@ const TeamRegistration: React.FC<TeamRegistrationProps> = ({
   return (
     <div className="flex flex-col min-h-screen bg-slate-900 text-white">
       {/* Header */}
-      <header className="p-4 bg-slate-800 text-center font-bold text-lg">
-        ลงทะเบียนทีมกระทง
+      <header className="p-4 bg-slate-800 flex items-center justify-between">
+        <button
+          onClick={() => navigate(-1)} // ✅ ปุ่มย้อนกลับ
+          className="text-slate-300 hover:text-white transition"
+        >
+          ← ย้อนกลับ
+        </button>
+        <h1 className="font-bold text-lg text-center flex-1">ลงทะเบียนทีมกระทง</h1>
+        <div className="w-12"></div> {/* ช่องว่างให้หัวไม่ขยับเวลา back ปรากฏ */}
       </header>
 
       {/* Scrollable content */}
@@ -175,7 +184,7 @@ const TeamRegistration: React.FC<TeamRegistrationProps> = ({
           onSubmit={handleSubmit}
           className="max-w-lg mx-auto p-4 sm:p-6 space-y-6 pb-24"
         >
-          {/* ... เนื้อหาทั้งหมดของฟอร์ม (เหมือนเดิม) ... */}
+          {/* ... เนื้อหาทั้งหมดของฟอร์ม ... */}
         </form>
       </main>
 
