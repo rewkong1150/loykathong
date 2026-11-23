@@ -102,7 +102,8 @@ export function EntryFrame({ src, alt, crown, tag, onClick }: { src: string; alt
       {crown && <svg className="crown" viewBox="0 0 64 44"><use href="#crown" /></svg>}
       <div className="photo">
         {tag && <span className="tag">{tag}</span>}
-        <img src={src} alt={alt} loading="lazy" />
+        <img className="bg" src={src} alt="" aria-hidden loading="lazy" />
+        <img className="fg" src={src} alt={alt} loading="lazy" />
       </div>
       <div className="glare" />
     </div>

@@ -1,14 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import { errorMessage, isAdminEmail, isCompanyEmail, stableShuffle, voteButton } from '../../src/lib/rules';
-import { validateImageFile } from '../../src/lib/image';
 
 describe('emails', () => {
-  it('company domain, case-insensitive, exact', () => {
+  it('any valid email is allowed', () => {
     expect(isCompanyEmail('A@VillaCarteGroup.com')).toBe(true);
-    expect(isCompanyEmail('a@villacartegroup.com.evil.io')).toBe(false);
-    expect(isCompanyEmail('a@notvillacartegroup.com')).toBe(false);
     expect(isCompanyEmail('Staff@LaGreenHotel.com')).toBe(true);
-    expect(isCompanyEmail('a@lagreenhotel.com.evil.io')).toBe(false);
+    expect(isCompanyEmail('someone@gmail.com')).toBe(true);
+    expect(isCompanyEmail('not-an-email')).toBe(false);
+    expect(isCompanyEmail('a@b')).toBe(false);
+    expect(isCompanyEmail('')).toBe(false);
     expect(isCompanyEmail(null)).toBe(false);
   });
   it('admin, case-insensitive', () => {
@@ -53,16 +53,3 @@ describe('errorMessage', () => {
   });
 });
 
-describe('validateImageFile', () => {
-  it('rejects HEIC and non-images', () => {
-    expect(validateImageFile({ type: 'application/pdf', name: 'a.pdf' })).toBe('Please upload a photo (JPG, PNG, WebP or HEIC)');
-    expect(validateImageFile({ type: 'image/gif', name: 'a.gif' })).toBe('Please upload a photo (JPG, PNG, WebP or HEIC)');
-  });
-  it('accepts jpg/png/webp', () => {
-    expect(validateImageFile({ type: 'image/jpeg', name: 'a.jpg' })).toBeNull();
-    expect(validateImageFile({ type: 'image/png', name: 'a.png' })).toBeNull();
-    expect(validateImageFile({ type: 'image/webp', name: 'a.webp' })).toBeNull();
-    expect(validateImageFile({ type: 'image/heic', name: 'a.heic' })).toBeNull();
-    expect(validateImageFile({ type: '', name: 'IMG_1.HEIC' })).toBeNull();
-  });
-});

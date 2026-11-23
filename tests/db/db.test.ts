@@ -11,7 +11,8 @@ const ADMIN: U = { id: '00000000-0000-0000-0000-00000000000a', email: 'Patomporn
 const ALICE: U = { id: '00000000-0000-0000-0000-000000000001', email: 'alice@villacartegroup.com', name: 'Alice' };
 const BOB: U = { id: '00000000-0000-0000-0000-000000000002', email: 'bob@villacartegroup.com', name: 'Bob' };
 const CAROL: U = { id: '00000000-0000-0000-0000-000000000003', email: 'carol@villacartegroup.com', name: 'Carol' };
-const OUTSIDER: U = { id: '00000000-0000-0000-0000-000000000009', email: 'x@gmail.com', name: 'X' };
+// An account without a usable email (the only kind the database rejects now).
+const OUTSIDER: U = { id: '00000000-0000-0000-0000-000000000009', email: 'not-an-email', name: 'X' };
 
 let db: PGlite;
 
@@ -54,8 +55,9 @@ beforeEach(async () => {
 });
 
 describe('access', () => {
-  it('rejects non-company signup', async () => {
-    await expect(q(`insert into auth.users(email) values ('x@gmail.com')`)).rejects.toThrow('NOT_COMPANY');
+  it('accepts any valid email at signup, rejects invalid ones', async () => {
+    await expect(q(`insert into auth.users(email) values ('not-an-email')`)).rejects.toThrow('NOT_COMPANY');
+    await q(`insert into auth.users(email) values ('someone@gmail.com')`);
     await q(`insert into auth.users(email) values ('Someone@VillaCarteGroup.com')`);
     await q(`insert into auth.users(email) values ('Staff@LaGreenHotel.com')`);
   });

@@ -1,12 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
 import type { Backend } from '../lib/api';
-import { compressImage, validateImageFile } from '../lib/image';
+import { compressImage } from '../lib/image';
 import { errorMessage, isCompanyEmail } from '../lib/rules';
 import type { AppUser, Entry, Member } from '../lib/types';
 import { burst, useToast } from './Feedback';
 import Modal, { Confirm } from './Modal';
 
-const PHOTO_READ_ERROR = "We couldn't read that photo. Please try another one, or take a screenshot of it and upload that.";
+const PHOTO_READ_ERROR = "We couldn't open that file as a photo. Please choose a different photo, or take a screenshot of it and upload that.";
 
 // Compresses the photo as soon as it's picked, so problems show up right away
 // and the preview is exactly what will be uploaded.
@@ -21,12 +21,10 @@ function PhotoPick({ label, preview, onPick }: { label: string; preview: string 
         {working ? <div className="hint"><b>Preparing photo…</b></div> : preview ? <img src={preview} alt="" /> : (
           <div className="hint"><b>Add a photo</b>Tap to choose · large photos are resized for you</div>
         )}
-        <input ref={input} type="file" accept="image/*" onChange={async (e) => {
+        <input ref={input} type="file" accept="image/*,.heic,.heif,.avif,.bmp,.gif" onChange={async (e) => {
           const f = e.target.files?.[0];
           e.target.value = '';
           if (!f) return;
-          const bad = validateImageFile(f);
-          if (bad) return toast(bad, 'err');
           setWorking(true);
           try {
             onPick(await compressImage(f));
@@ -147,7 +145,7 @@ export function KrathongForm({ open, onClose, user, existing, backend, onSaved }
   const add = () => {
     const email = mEmail.trim().toLowerCase();
     if (!mName.trim() || !email) return toast('Enter a name and an email', 'err');
-    if (!isCompanyEmail(email)) return toast('Team members need a @villacartegroup.com or @lagreenhotel.com email', 'err');
+    if (!isCompanyEmail(email)) return toast('Please enter a valid email address', 'err');
     if (members.some((m) => m.email === email)) return toast('That person is already in the list', 'err');
     setMembers([...members, { name: mName.trim(), email }]);
     setMName(''); setMEmail('');
@@ -181,7 +179,7 @@ export function KrathongForm({ open, onClose, user, existing, backend, onSaved }
         ))}
         <div className="row2" style={{ marginTop: 10 }}>
           <input className="input" value={mName} placeholder="Member name" onChange={(e) => setMName(e.target.value)} />
-          <input className="input" value={mEmail} placeholder="name@villacartegroup.com" onChange={(e) => setMEmail(e.target.value)}
+          <input className="input" value={mEmail} placeholder="name@example.com" onChange={(e) => setMEmail(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && add()} />
         </div>
         <div style={{ marginTop: 10 }}><button className="btn ghost sm" onClick={add}>+ Add member</button></div>

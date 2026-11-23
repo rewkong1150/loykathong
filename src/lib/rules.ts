@@ -1,8 +1,8 @@
-export const COMPANY_DOMAINS = ['villacartegroup.com', 'lagreenhotel.com'];
 export const ADMIN_EMAIL = 'patomporn.k@villacartegroup.com';
 export const VOTE_POINTS = 10;
 
-const COMPANY_RE = /^[^@\s]+@(villacartegroup|lagreenhotel)\.com$/i;
+// Any account with a real email address may sign in (the name "company" is historical).
+const COMPANY_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
 
 export function isCompanyEmail(e?: string | null): boolean {
   return !!e && COMPANY_RE.test(e.trim());
@@ -44,7 +44,7 @@ export function voteButton(p: {
 }
 
 const MESSAGES: Record<string, string> = {
-  NOT_COMPANY: 'Only Villa Carte company accounts can use this site.',
+  NOT_COMPANY: 'Please sign in with a Google account that has an email address.',
   NOT_ADMIN: 'Only the administrator can do that.',
   VOTING_CLOSED: 'Voting is closed for this contest right now.',
   REGISTRATION_CLOSED: 'Registration is closed for this contest right now.',
@@ -54,7 +54,7 @@ const MESSAGES: Record<string, string> = {
   IMAGE_REQUIRED: 'Please add a photo.',
   BAD_IMAGE: 'That photo upload is not valid. Please upload it again.',
   NAME_REQUIRED: 'Please fill in every name.',
-  NOT_COMPANY_MEMBER: 'Every team member needs a company email (@villacartegroup.com or @lagreenhotel.com).',
+  NOT_COMPANY_MEMBER: 'Every team member needs a valid email address.',
   MEMBER_IN_OTHER_TEAM: 'One of those people is already in another team.',
   ALREADY_IN_TEAM: 'You are already in a krathong team.',
   CREATOR_REQUIRED: 'You must stay in your own team.',

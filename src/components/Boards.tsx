@@ -164,7 +164,7 @@ export function Podium({ contest, entries, votedId, votingOpen, onVote, onOpen, 
                 {tools(e)}
               </div>
               <div className="p">
-                <Count value={e.score ?? 0} delay={reveal ? 3000 : 0} />pts
+                <span className="pp"><Count value={e.score ?? 0} delay={reveal ? 3000 : 0} />pts</span>
                 <div style={{ marginTop: 6 }}><VoteBtn entry={e} votedId={votedId} votingOpen={votingOpen} onVote={onVote} small /></div>
               </div>
             </div>

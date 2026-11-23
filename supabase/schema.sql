@@ -4,7 +4,7 @@
 -- Then run storage.sql.
 --
 -- Every rule lives here, so it holds even if someone bypasses the web UI:
---   * only @villacartegroup.com and @lagreenhotel.com accounts
+--   * any signed-in account with a valid email (is_company_email is a historical name)
 --   * one admin: patomporn.k@villacartegroup.com
 --   * registration / voting switches per contest
 --   * 1 vote per user per contest, never for your own entry or team
@@ -21,7 +21,7 @@ $$;
 
 create or replace function public.is_company_email(p_email text) returns boolean
 language sql immutable as $$
-  select lower(coalesce(p_email, '')) ~ '^[^@\s]+@(villacartegroup|lagreenhotel)\.com$'
+  select lower(coalesce(p_email, '')) ~ '^[^@\s]+@[^@\s]+\.[^@\s]+$'
 $$;
 
 create or replace function public.is_company_user() returns boolean

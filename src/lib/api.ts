@@ -23,7 +23,7 @@ export async function signInWithGoogle() {
     provider: 'google',
     options: {
       redirectTo: window.location.origin + window.location.pathname,
-      queryParams: { hd: '*', prompt: 'select_account' },
+      queryParams: { prompt: 'select_account' },
     },
   });
   if (error) fail(error);
