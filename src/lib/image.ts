@@ -8,9 +8,13 @@ type Source = { el: CanvasImageSource; w: number; h: number; done: () => void };
 async function decodeWithImg(file: Blob): Promise<Source> {
   const url = URL.createObjectURL(file);
   const img = new Image();
-  img.src = url;
   try {
-    await img.decode();
+    await new Promise<void>((resolve, reject) => {
+      const t = setTimeout(() => reject(new Error('timeout')), 20000);
+      img.onload = () => { clearTimeout(t); resolve(); };
+      img.onerror = () => { clearTimeout(t); reject(new Error('load error')); };
+      img.src = url;
+    });
   } catch (e) {
     URL.revokeObjectURL(url);
     throw e;

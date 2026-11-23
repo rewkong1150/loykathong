@@ -6,6 +6,7 @@ import type { AppUser, Entry, Member } from '../lib/types';
 import { burst, useToast } from './Feedback';
 import Modal, { Confirm } from './Modal';
 
+// accept="image/*" (no explicit .heic) makes iPhone Safari hand us a JPEG instead of raw HEIC.
 const PHOTO_READ_ERROR = "We couldn't open that file as a photo. Please choose a different photo, or take a screenshot of it and upload that.";
 
 // Compresses the photo as soon as it's picked, so problems show up right away
@@ -17,21 +18,23 @@ function PhotoPick({ label, preview, onPick }: { label: string; preview: string 
   return (
     <label className="field">
       <span>{label}</span>
-      <div className="drop" onClick={() => input.current?.click()}>
+      <div className="drop">
         {working ? <div className="hint"><b>Preparing photo…</b></div> : preview ? <img src={preview} alt="" /> : (
           <div className="hint"><b>Add a photo</b>Tap to choose · large photos are resized for you</div>
         )}
-        <input ref={input} type="file" accept="image/*,.heic,.heif,.avif,.bmp,.gif" onChange={async (e) => {
-          const f = e.target.files?.[0];
-          e.target.value = '';
+        <input ref={input} type="file" accept="image/*" onChange={async (e) => {
+          const el = e.currentTarget;
+          const f = el.files?.[0];
           if (!f) return;
           setWorking(true);
           try {
             onPick(await compressImage(f));
           } catch {
-            toast(PHOTO_READ_ERROR, 'err');
+            // File details help us diagnose reports from users' phones.
+            toast(`${PHOTO_READ_ERROR} (${f.type || 'unknown type'}, ${(f.size / 1e6).toFixed(1)} MB)`, 'err');
           } finally {
             setWorking(false);
+            el.value = ''; // allow picking the same photo again
           }
         }} />
       </div>

@@ -1,5 +1,5 @@
 /* ---------- shared gold frame ---------- */
-.frame{position:relative;border:1px solid #d4af3766;padding:7px;transform-style:preserve-3d;transition:transform .2s ease-out,box-shadow .4s;cursor:pointer;background:#0b0910}
+.frame{position:relative;border:1px solid #d4af3766;padding:7px;transition:transform .2s ease-out,box-shadow .4s;cursor:pointer;background:#0b0910}
 .frame:hover{box-shadow:0 30px 60px -25px #d4af37aa}
 .photo{position:relative;aspect-ratio:3/4;overflow:hidden;background:radial-gradient(circle at 50% 30%,#3a2c17,#120d06)}
 .photo img{position:absolute;inset:0;width:100%;height:100%;transition:transform .8s}
