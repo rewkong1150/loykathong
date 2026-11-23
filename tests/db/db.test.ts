@@ -57,6 +57,7 @@ describe('access', () => {
   it('rejects non-company signup', async () => {
     await expect(q(`insert into auth.users(email) values ('x@gmail.com')`)).rejects.toThrow('NOT_COMPANY');
     await q(`insert into auth.users(email) values ('Someone@VillaCarteGroup.com')`);
+    await q(`insert into auth.users(email) values ('Staff@LaGreenHotel.com')`);
   });
 
   it('non-company jwt cannot read settings', async () => {

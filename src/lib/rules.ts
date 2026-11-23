@@ -1,8 +1,8 @@
-export const COMPANY_DOMAIN = 'villacartegroup.com';
+export const COMPANY_DOMAINS = ['villacartegroup.com', 'lagreenhotel.com'];
 export const ADMIN_EMAIL = 'patomporn.k@villacartegroup.com';
 export const VOTE_POINTS = 10;
 
-const COMPANY_RE = /^[^@\s]+@villacartegroup\.com$/i;
+const COMPANY_RE = /^[^@\s]+@(villacartegroup|lagreenhotel)\.com$/i;
 
 export function isCompanyEmail(e?: string | null): boolean {
   return !!e && COMPANY_RE.test(e.trim());
@@ -54,7 +54,7 @@ const MESSAGES: Record<string, string> = {
   IMAGE_REQUIRED: 'Please add a photo.',
   BAD_IMAGE: 'That photo upload is not valid. Please upload it again.',
   NAME_REQUIRED: 'Please fill in every name.',
-  NOT_COMPANY_MEMBER: 'Every team member needs a @villacartegroup.com email.',
+  NOT_COMPANY_MEMBER: 'Every team member needs a company email (@villacartegroup.com or @lagreenhotel.com).',
   MEMBER_IN_OTHER_TEAM: 'One of those people is already in another team.',
   ALREADY_IN_TEAM: 'You are already in a krathong team.',
   CREATOR_REQUIRED: 'You must stay in your own team.',

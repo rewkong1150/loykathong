@@ -135,7 +135,7 @@ export function KrathongForm({ open, onClose, user, existing, backend, onSaved }
   const add = () => {
     const email = mEmail.trim().toLowerCase();
     if (!mName.trim() || !email) return toast('Enter a name and an email', 'err');
-    if (!isCompanyEmail(email)) return toast('Team members need a @villacartegroup.com email', 'err');
+    if (!isCompanyEmail(email)) return toast('Team members need a @villacartegroup.com or @lagreenhotel.com email', 'err');
     if (members.some((m) => m.email === email)) return toast('That person is already in the list', 'err');
     setMembers([...members, { name: mName.trim(), email }]);
     setMName(''); setMEmail('');

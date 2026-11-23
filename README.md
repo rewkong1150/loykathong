@@ -4,7 +4,7 @@ The internal contest site for Loy Krathong day:
 
 - **Costume contest (morning).** Individual entries.
 - **Krathong contest (afternoon).** Team entries.
-- **Sign-in.** Only `@villacartegroup.com` Google accounts can use the site.
+- **Sign-in.** Only `@villacartegroup.com` and `@lagreenhotel.com` Google accounts can use the site.
 - **Admin.** One admin, `patomporn.k@villacartegroup.com`, controls everything live:
   - opening and closing registration and voting for each contest;
   - announcing results, with a reveal animation that plays for everyone online.
@@ -35,7 +35,7 @@ The internal contest site for Loy Krathong day:
    - **Site URL:** your production URL.
    - **Redirect URLs:** add your production URL and `http://localhost:3000`.
 
-The site asks Google for company accounts only (`hd=villacartegroup.com`). The database also rejects any other domain at sign-up.
+The site asks Google for Workspace accounts only (`hd=*`, so no personal Gmail). The database rejects any domain other than the two company domains at sign-up.
 
 ## 3. Run it
 
@@ -74,7 +74,7 @@ The **Admin controls** panel is visible only when you're signed in as the admin.
 
 ## Rules enforced by the database
 
-- Only `@villacartegroup.com` accounts can sign up, read data or call any function.
+- Only `@villacartegroup.com` and `@lagreenhotel.com` accounts can sign up, read data or call any function.
 - Registration and voting only work while the matching switch is open.
 - Each person gets 1 vote per contest. Votes are final. Nobody can vote for their own costume or a krathong team they're in.
 - One costume entry per person. Each person can be in one krathong team, and only the team's creator can edit it. Entries can be edited only while registration is open.

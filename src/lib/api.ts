@@ -1,6 +1,5 @@
 import { supabase } from './supabase';
 import { compressImage } from './image';
-import { COMPANY_DOMAIN } from './rules';
 import type { Contest, Entry, FlagKey, Member, MyVotes, Settings } from './types';
 
 /** RPC errors come back as Postgres messages like "VOTING_CLOSED"; surface just the code. */
@@ -25,7 +24,7 @@ export async function signInWithGoogle() {
     provider: 'google',
     options: {
       redirectTo: window.location.origin + window.location.pathname,
-      queryParams: { hd: COMPANY_DOMAIN, prompt: 'select_account' },
+      queryParams: { hd: '*', prompt: 'select_account' },
     },
   });
   if (error) fail(error);

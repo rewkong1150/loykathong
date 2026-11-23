@@ -7,6 +7,8 @@ describe('emails', () => {
     expect(isCompanyEmail('A@VillaCarteGroup.com')).toBe(true);
     expect(isCompanyEmail('a@villacartegroup.com.evil.io')).toBe(false);
     expect(isCompanyEmail('a@notvillacartegroup.com')).toBe(false);
+    expect(isCompanyEmail('Staff@LaGreenHotel.com')).toBe(true);
+    expect(isCompanyEmail('a@lagreenhotel.com.evil.io')).toBe(false);
     expect(isCompanyEmail(null)).toBe(false);
   });
   it('admin, case-insensitive', () => {
