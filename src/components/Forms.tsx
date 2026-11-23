@@ -1,28 +1,40 @@
 import { useEffect, useRef, useState } from 'react';
 import type { Backend } from '../lib/api';
-import { validateImageFile } from '../lib/image';
+import { compressImage, validateImageFile } from '../lib/image';
 import { errorMessage, isCompanyEmail } from '../lib/rules';
 import type { AppUser, Entry, Member } from '../lib/types';
 import { burst, useToast } from './Feedback';
 import Modal, { Confirm } from './Modal';
 
-function PhotoPick({ label, preview, onPick }: { label: string; preview: string | null; onPick: (f: File) => void }) {
+const PHOTO_READ_ERROR = "We couldn't read that photo. Please try another one, or take a screenshot of it and upload that.";
+
+// Compresses the photo as soon as it's picked, so problems show up right away
+// and the preview is exactly what will be uploaded.
+function PhotoPick({ label, preview, onPick }: { label: string; preview: string | null; onPick: (b: Blob) => void }) {
   const toast = useToast();
   const input = useRef<HTMLInputElement>(null);
+  const [working, setWorking] = useState(false);
   return (
     <label className="field">
       <span>{label}</span>
       <div className="drop" onClick={() => input.current?.click()}>
-        {preview ? <img src={preview} alt="" /> : (
-          <div className="hint"><b>Add a photo</b>JPG, PNG or WebP · large photos are resized for you</div>
+        {working ? <div className="hint"><b>Preparing photo…</b></div> : preview ? <img src={preview} alt="" /> : (
+          <div className="hint"><b>Add a photo</b>Tap to choose · large photos are resized for you</div>
         )}
-        <input ref={input} type="file" accept="image/jpeg,image/png,image/webp" onChange={(e) => {
+        <input ref={input} type="file" accept="image/*" onChange={async (e) => {
           const f = e.target.files?.[0];
           e.target.value = '';
           if (!f) return;
           const bad = validateImageFile(f);
           if (bad) return toast(bad, 'err');
-          onPick(f);
+          setWorking(true);
+          try {
+            onPick(await compressImage(f));
+          } catch {
+            toast(PHOTO_READ_ERROR, 'err');
+          } finally {
+            setWorking(false);
+          }
         }} />
       </div>
     </label>
@@ -41,7 +53,7 @@ function useSubmit(onDone: () => void) {
       onDone();
     } catch (e) {
       const code = (e as Error).message;
-      toast(code === 'BAD_IMAGE_FILE' ? "We couldn't read that photo. Please try another one." : errorMessage(code), 'err');
+      toast(code === 'BAD_IMAGE_FILE' ? PHOTO_READ_ERROR : errorMessage(code), 'err');
     } finally {
       setBusy(false);
     }
@@ -55,7 +67,7 @@ export function CostumeForm({ open, onClose, user, existing, backend, onSaved }:
 }) {
   const [name, setName] = useState(user.name);
   const [title, setTitle] = useState('');
-  const [file, setFile] = useState<File | null>(null);
+  const [file, setFile] = useState<Blob | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const [confirmDel, setConfirmDel] = useState(false);
   const submitRef = useRef<HTMLButtonElement>(null);
@@ -112,8 +124,8 @@ export function KrathongForm({ open, onClose, user, existing, backend, onSaved }
   const [members, setMembers] = useState<Member[]>([me]);
   const [mName, setMName] = useState('');
   const [mEmail, setMEmail] = useState('');
-  const [kFile, setKFile] = useState<File | null>(null);
-  const [tFile, setTFile] = useState<File | null>(null);
+  const [kFile, setKFile] = useState<Blob | null>(null);
+  const [tFile, setTFile] = useState<Blob | null>(null);
   const [kPrev, setKPrev] = useState<string | null>(null);
   const [tPrev, setTPrev] = useState<string | null>(null);
   const [confirmDel, setConfirmDel] = useState(false);

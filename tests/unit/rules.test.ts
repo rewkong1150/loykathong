@@ -55,13 +55,14 @@ describe('errorMessage', () => {
 
 describe('validateImageFile', () => {
   it('rejects HEIC and non-images', () => {
-    expect(validateImageFile({ type: 'image/heic', name: 'a.heic' })).toBe('Please upload a JPG, PNG or WebP photo');
-    expect(validateImageFile({ type: '', name: 'a.HEIC' })).toBe('Please upload a JPG, PNG or WebP photo');
-    expect(validateImageFile({ type: 'application/pdf', name: 'a.pdf' })).toBe('Please upload a JPG, PNG or WebP photo');
+    expect(validateImageFile({ type: 'application/pdf', name: 'a.pdf' })).toBe('Please upload a photo (JPG, PNG, WebP or HEIC)');
+    expect(validateImageFile({ type: 'image/gif', name: 'a.gif' })).toBe('Please upload a photo (JPG, PNG, WebP or HEIC)');
   });
   it('accepts jpg/png/webp', () => {
     expect(validateImageFile({ type: 'image/jpeg', name: 'a.jpg' })).toBeNull();
     expect(validateImageFile({ type: 'image/png', name: 'a.png' })).toBeNull();
     expect(validateImageFile({ type: 'image/webp', name: 'a.webp' })).toBeNull();
+    expect(validateImageFile({ type: 'image/heic', name: 'a.heic' })).toBeNull();
+    expect(validateImageFile({ type: '', name: 'IMG_1.HEIC' })).toBeNull();
   });
 });

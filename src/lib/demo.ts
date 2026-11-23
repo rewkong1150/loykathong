@@ -70,7 +70,7 @@ export function makeDemo(admin: boolean): { backend: Backend; user: AppUser } {
       return wait(r.id);
     },
     deleteMyKrathongTeam(id) { data.krathong = data.krathong.filter((x) => x.id !== id); bump(); return wait(null); },
-    uploadImage: (file) => wait(URL.createObjectURL(file)),
+    uploadImage: (blob) => wait(URL.createObjectURL(blob)),
     adminSetFlag(flag: FlagKey, v) { settings[flag] = v; bump(); return wait(null); },
     adminAdjustScore(c, id, d) { data[c].find((x) => x.id === id)!.adj += d; bump(); return wait(null); },
     adminDeleteEntry(c, id) { data[c] = data[c].filter((x) => x.id !== id); bump(); return wait(null); },

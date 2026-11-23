@@ -1,5 +1,4 @@
 import { supabase } from './supabase';
-import { compressImage } from './image';
 import type { Contest, Entry, FlagKey, Member, MyVotes, Settings } from './types';
 
 /** RPC errors come back as Postgres messages like "VOTING_CLOSED"; surface just the code. */
@@ -103,8 +102,8 @@ export const saveKrathongTeam = (
 
 export const deleteMyKrathongTeam = (teamId: string) => rpc('delete_my_krathong_team', { p_team_id: teamId });
 
-export async function uploadImage(file: File, userId: string, slot: string): Promise<string> {
-  const blob = await compressImage(file);
+// `blob` is already resized + JPEG-encoded by compressImage when the user picked it.
+export async function uploadImage(blob: Blob, userId: string, slot: string): Promise<string> {
   const path = `${userId}/${slot}-${Date.now()}.jpg`;
   const { error } = await supabase.storage.from('entries').upload(path, blob, {
     contentType: 'image/jpeg',
@@ -152,7 +151,7 @@ export interface Backend {
   deleteMyCostumeEntry(): Promise<unknown>;
   saveKrathongTeam(teamId: string | null, name: string, members: Member[], kPath: string, tPath: string): Promise<string>;
   deleteMyKrathongTeam(teamId: string): Promise<unknown>;
-  uploadImage(file: File, userId: string, slot: string): Promise<string>;
+  uploadImage(blob: Blob, userId: string, slot: string): Promise<string>;
   adminSetFlag(flag: FlagKey, value: boolean): Promise<unknown>;
   adminAdjustScore(c: Contest, id: string, delta: number): Promise<unknown>;
   adminDeleteEntry(c: Contest, id: string): Promise<unknown>;
